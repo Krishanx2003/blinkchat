@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import HomeScreen from '@/components/HomeScreen';
-import ChatScreen from '@/components/chatscreen';
+
 import WaitingScreen from '@/components/WaitingScreen';
 import EndScreen from '@/components/EndScreen';
+import ChatScreen from '@/components/ChatScreen';
 
 
 type AppState = 'home' | 'waiting' | 'chat' | 'ended';

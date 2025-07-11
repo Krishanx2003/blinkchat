@@ -95,14 +95,14 @@ const ProfileSetupPage: React.FC = () => {
     setLoading(true);
 
     try {
-      // Check if username is taken by another user (only if username changed)
-      if (existingProfile && username !== existingProfile.username) {
+      // Check if username is taken by another user (only if username is different from existing)
+      if (!existingProfile || username !== existingProfile.username) {
         const { data: existingUser } = await supabase
           .from('profiles')
           .select('user_id')
           .eq('username', username.trim())
           .neq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (existingUser) {
           toast.error('This username is already taken. Please choose another one.');
@@ -111,6 +111,7 @@ const ProfileSetupPage: React.FC = () => {
         }
       }
 
+      // Always use upsert to handle both insert and update cases
       const { error } = await supabase
         .from('profiles')
         .upsert({
@@ -123,11 +124,13 @@ const ProfileSetupPage: React.FC = () => {
           city: city || null,
           profile_completed: true,
           updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
         });
 
       if (error) {
         console.error('Profile update error:', error);
-        if (error.message.includes('duplicate key')) {
+        if (error.code === '23505') {
           toast.error('This username is already taken. Please choose another one.');
         } else {
           toast.error('Error updating profile: ' + error.message);
