@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import HomeScreen from '@/components/HomeScreen';
-// import WaitingScreen from '@/components/WaitingScreen';
-// import ChatScreen from '@/components/ChatScreen';
-// import EndScreen from '@/components/EndScreen';
+
+import WaitingScreen from '@/components/WaitingScreen';
+import EndScreen from '@/components/EndScreen';
+import ChatScreen from '@/components/ChatScreen';
+
 
 type AppState = 'home' | 'waiting' | 'chat' | 'ended';
 
@@ -56,14 +58,14 @@ const HomePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-purple-800">
       {currentState === 'home' && <HomeScreen onStartChat={handleStartChat} />}
-      {/* {currentState === 'waiting' && <WaitingScreen />}
+      {currentState === 'waiting' && <WaitingScreen />}
       {currentState === 'chat' && (
         <ChatScreen 
           timeLeft={formatTime(timeLeft)} 
           onEndChat={handleEndChat}
         />
       )}
-      {currentState === 'ended' && <EndScreen onNewChat={handleNewChat} />} */}
+      {currentState === 'ended' && <EndScreen onNewChat={handleNewChat} />}
     </div>
   );
 };
