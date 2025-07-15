@@ -44,8 +44,12 @@ const UserDiscovery = ({ currentUser, onUserSelect }: UserDiscoveryProps) => {
   }, []);
 
   useEffect(() => {
-    applyFilters();
-  }, [onlineUsers, genderFilter, countryFilter, cityFilter, searchQuery]);
+    loadOnlineUsers(); // Fetch from server with filters
+  }, [genderFilter, countryFilter, cityFilter]);
+
+  useEffect(() => {
+    applyFilters(); // Only for searchQuery
+  }, [onlineUsers, searchQuery]);
 
   const updateLookingForChat = async (looking: boolean) => {
     try {
@@ -66,7 +70,11 @@ const UserDiscovery = ({ currentUser, onUserSelect }: UserDiscoveryProps) => {
   const loadOnlineUsers = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.rpc('get_available_users_for_matching');
+      const { data, error } = await supabase.rpc('get_available_users_for_matching', {
+        filter_gender: genderFilter || null,
+        filter_country: countryFilter || null,
+        filter_city: cityFilter || null
+      });
       
       if (error) {
         console.error('Error loading users:', error);
@@ -85,30 +93,13 @@ const UserDiscovery = ({ currentUser, onUserSelect }: UserDiscoveryProps) => {
   const applyFilters = () => {
     let filtered = [...onlineUsers];
 
-    // Apply search query
+    // Only apply search query client-side
     if (searchQuery.trim()) {
       filtered = filtered.filter(user => 
         user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.country?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.city?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Apply specific filters
-    if (genderFilter) {
-      filtered = filtered.filter(user => user.gender === genderFilter);
-    }
-    
-    if (countryFilter.trim()) {
-      filtered = filtered.filter(user => 
-        user.country?.toLowerCase().includes(countryFilter.toLowerCase())
-      );
-    }
-    
-    if (cityFilter.trim()) {
-      filtered = filtered.filter(user => 
-        user.city?.toLowerCase().includes(cityFilter.toLowerCase())
       );
     }
 
