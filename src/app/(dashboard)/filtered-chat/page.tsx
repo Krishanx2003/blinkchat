@@ -6,9 +6,10 @@ import { User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/client';
+
 import ActiveChat from './_components/ActiveChat';
 import UserDiscovery from './_components/UserDiscovery';
+import { supabase } from '@/lib/client';
 
 
 export interface OnlineUser {
