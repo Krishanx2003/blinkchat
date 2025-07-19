@@ -4,8 +4,8 @@ import Image from 'next/image';
 import { format } from 'date-fns';
 import { Calendar, Clock, Tag, TrendingUp, Star } from 'lucide-react';
 import { supabase } from '@/lib/client';
+import type { BlogPost, Category, PopularPost } from '@/lib/types';
 import { Key, ReactElement, JSXElementConstructor, ReactNode, ReactPortal } from 'react';
-import { BlogPost, Category, PopularPost } from '@/lib/types';
 
 async function fetchBlogData() {
   try {
