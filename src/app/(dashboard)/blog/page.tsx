@@ -7,7 +7,6 @@ import { supabase } from '@/lib/client';
 import { Key, ReactElement, JSXElementConstructor, ReactNode, ReactPortal } from 'react';
 import { BlogPost, Category, PopularPost } from '@/lib/types';
 
-
 async function fetchBlogData() {
   try {
     const [recentPostsRes, featuredPostsRes, categoriesRes, popularPostsRes] = await Promise.all([
