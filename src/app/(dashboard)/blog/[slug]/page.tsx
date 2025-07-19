@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { ReactElement, JSXElementConstructor, ReactNode, ReactPortal, Key } from 'react';
 import { RelatedPost } from '@/lib/types';
 
+
 async function fetchPost(slug: string) {
   try {
     const { data: postData, error } = await supabase
