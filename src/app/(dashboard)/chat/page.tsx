@@ -137,7 +137,7 @@ const ChatPage = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-dvh flex items-center justify-center bg-background">
         <div className="text-foreground text-center">
           <p>Loading...</p>
         </div>
@@ -146,107 +146,108 @@ const ChatPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto h-screen flex flex-col">
-        {/* Header */}
-        <div className="bg-secondary backdrop-blur-lg border-b border-border p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => router.push("/")}
-                className="p-2 rounded-full bg-secondary hover:bg-muted transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 text-foreground" />
-              </button>
-              <div className="flex items-center space-x-2">
-                <Users className="w-6 h-6 text-foreground" />
-                <div>
-                  <h1 className="text-xl font-bold text-foreground">Global Chat</h1>
-                  <p className="text-muted-foreground text-sm">Chat with everyone</p>
-                </div>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-muted-foreground text-sm">Signed in as</p>
-              <p className="text-foreground font-medium">@{user.email}</p>
-            </div>
-          </div>
-        </div>
-        {/* Messages */}
-        <div className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full p-4">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-foreground/70">Loading messages...</div>
-              </div>
-            ) : messages.length === 0 ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center text-foreground/70">
-                  <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg mb-2">No messages yet</p>
-                  <p>Be the first to start the conversation!</p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {messages.map((message) => {
-                  const isOwnMessage = user && message.username === user.email?.split("@")[0];
-                  return (
-                    <div
-                      key={message.id}
-                      className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-lg ${
-                          isOwnMessage
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-secondary text-foreground border border-border"
-                        }`}
-                      >
-                        <div className="flex items-center space-x-2 mb-1">
-                          <span className="font-medium text-sm">
-                            {message.user_name || message.username}
-                          </span>
-                          <span className="text-xs opacity-70">
-                            {new Date(message.created_at).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        </div>
-                        <p className="text-sm lg:text-base break-words">
-                          {message.content}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
-              </div>
-            )}
-          </ScrollArea>
-        </div>
-        {/* Message Input */}
-        <div className="bg-secondary backdrop-blur-lg border-t border-border p-4">
-          <div className="flex items-center space-x-3">
-            <textarea
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Type your message..."
-              className="flex-1 bg-secondary text-foreground placeholder-muted-foreground rounded-2xl px-4 py-3 border border-border focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none max-h-32"
-              rows={1}
-            />
+    <div className="w-full h-dvh flex flex-col bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-secondary/80 backdrop-blur border-b border-border px-2 sm:px-4 py-3 flex-shrink-0">
+        <div className="flex items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <button
-              onClick={sendMessage}
-              disabled={!newMessage.trim()}
-              className="p-3 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 shadow-lg"
+              onClick={() => router.push("/")}
+              className="p-2 rounded-full bg-secondary hover:bg-muted transition-colors"
             >
-              <Send className="w-5 h-5 text-primary-foreground" />
+              <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
+            <div className="flex items-center gap-2">
+              <Users className="w-6 h-6 text-foreground" />
+              <div>
+                <h1 className="text-lg sm:text-xl font-bold text-foreground leading-tight">Global Chat</h1>
+                <p className="text-muted-foreground text-xs sm:text-sm">Chat with everyone</p>
+              </div>
+            </div>
+          </div>
+          <div className="text-right hidden sm:block">
+            <p className="text-muted-foreground text-xs sm:text-sm">Signed in as</p>
+            <p className="text-foreground font-medium break-all text-xs sm:text-base">@{user.email}</p>
           </div>
         </div>
-      </div>
+      </header>
+      {/* Messages */}
+      <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <ScrollArea className="flex-1 h-full px-2 sm:px-4 py-2 sm:py-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-foreground/70">Loading messages...</div>
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center text-foreground/70">
+                <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg mb-2">No messages yet</p>
+                <p>Be the first to start the conversation!</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3 sm:gap-4">
+              {messages.map((message) => {
+                const isOwnMessage = user && message.username === user.email?.split("@")[0];
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[80vw] sm:max-w-md md:max-w-lg px-3 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-lg break-words ${
+                        isOwnMessage
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary text-foreground border border-border"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-xs sm:text-sm">
+                          {message.user_name || message.username}
+                        </span>
+                        <span className="text-[10px] sm:text-xs opacity-70">
+                          {new Date(message.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm md:text-base">
+                        {message.content}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </ScrollArea>
+      </main>
+      {/* Message Input */}
+      <footer className="sticky bottom-0 z-10 bg-secondary/80 backdrop-blur border-t border-border px-2 sm:px-4 py-3 flex-shrink-0">
+        <form
+          className="flex items-end gap-2 sm:gap-3"
+          onSubmit={e => { e.preventDefault(); sendMessage(); }}
+        >
+          <textarea
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Type your message..."
+            className="flex-1 bg-secondary text-foreground placeholder-muted-foreground rounded-2xl px-3 sm:px-4 py-2 sm:py-3 border border-border focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none max-h-32 text-sm sm:text-base"
+            rows={1}
+          />
+          <button
+            type="submit"
+            disabled={!newMessage.trim()}
+            className="p-2 sm:p-3 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center"
+          >
+            <Send className="w-5 h-5 text-primary-foreground" />
+          </button>
+        </form>
+      </footer>
     </div>
   );
 };
