@@ -6,7 +6,7 @@ import { Search, Filter, MapPin, User as UserIcon, Calendar, MessageCircle, User
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { OnlineUser } from '../page';
 import { supabase } from '@/lib/client';
@@ -15,15 +15,14 @@ import { Badge } from '@/components/ui/badge';
 interface UserDiscoveryProps {
   currentUser: User;
   onUserSelect: (user: OnlineUser) => void;
+  isMobileView: boolean;
 }
 
-const UserDiscovery = ({ currentUser, onUserSelect }: UserDiscoveryProps) => {
+const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscoveryProps) => {
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<OnlineUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
-  
-  // Filter states
   const [genderFilter, setGenderFilter] = useState('');
   const [countryFilter, setCountryFilter] = useState('');
   const [cityFilter, setCityFilter] = useState('');
@@ -46,9 +45,7 @@ const UserDiscovery = ({ currentUser, onUserSelect }: UserDiscoveryProps) => {
           schema: 'public',
           table: 'user_presence'
         },
-        (payload) => {
-          console.log('Presence change:', payload);
-          // Reload users when presence changes
+        () => {
           loadOnlineUsers();
         }
       )
@@ -87,8 +84,6 @@ const UserDiscovery = ({ currentUser, onUserSelect }: UserDiscoveryProps) => {
   const loadOnlineUsers = async () => {
     try {
       setLoading(true);
-      
-      // Modified function to get ALL online users, not just those looking for chat
       const { data, error } = await supabase.rpc('get_all_online_users_for_chat', {
         filter_gender: genderFilter || null,
         filter_country: countryFilter || null,
@@ -113,7 +108,6 @@ const UserDiscovery = ({ currentUser, onUserSelect }: UserDiscoveryProps) => {
   const applyFilters = () => {
     let filtered = [...onlineUsers];
 
-    // Only apply search query client-side
     if (searchQuery.trim()) {
       filtered = filtered.filter(user => 
         user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -145,211 +139,176 @@ const UserDiscovery = ({ currentUser, onUserSelect }: UserDiscoveryProps) => {
     return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
 
-  const handleStartChat = (user: OnlineUser) => {
-    onUserSelect(user);
+  // Generate avatar URL
+  const getAvatarUrl = (userId: string, name: string) => {
+    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'];
+    const color = colors[parseInt(userId.slice(-1), 16) % colors.length];
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${color.slice(1)}&color=fff&size=48`;
   };
 
   return (
-    <div className="p-6 h-full flex flex-col">
-      {/* Header with online count */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <Users className="w-6 h-6 text-white" />
-            <h2 className="text-xl font-bold text-white">Online Users</h2>
-            <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
-              {filteredUsers.length} online
-            </Badge>
-          </div>
+    <div className="flex flex-col h-full">
+      {/* Search */}
+      <div className="p-4">
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search or start new chat"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 sm:py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:border-primary transition-colors"
+          />
+        </div>
+
+        {/* Filter Controls */}
+        <div className="flex gap-2 items-center mb-4">
+          <Button
+            onClick={() => setShowFilters(!showFilters)}
+            variant="outline"
+            size="sm"
+            className="text-muted-foreground border-border hover:bg-muted"
+          >
+            <Filter className="w-4 h-4 mr-2" />
+            {showFilters ? 'Hide Filters' : 'Show Filters'}
+          </Button>
           <Button
             onClick={loadOnlineUsers}
-            className="bg-gradient-to-r from-pink-500 to-violet-500 hover:from-pink-600 hover:to-violet-600"
+            variant="outline"
+            size="sm"
+            className="text-muted-foreground border-border hover:bg-muted"
           >
             Refresh
           </Button>
-        </div>
-        
-        {/* Search and Filter Controls */}
-        <div className="space-y-4">
-          <div className="flex gap-4 items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 w-4 h-4" />
-              <Input
-                placeholder="Search by name, username, or location..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white/20 border-white/30 text-white placeholder:text-white/60 focus:ring-white/50"
-              />
-            </div>
-            <Button
-              onClick={() => setShowFilters(!showFilters)}
-              variant="outline"
-              className="bg-white/20 border-white/30 text-white hover:bg-white/30"
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              Filters
-            </Button>
+          <div className="ml-auto text-xs text-muted-foreground">
+            {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''} online
           </div>
-
-          {/* Filter Panel */}
-          {showFilters && (
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-              <CardHeader>
-                <CardTitle className="text-white">Filter Options</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-white">Gender</Label>
-                    <select
-                      value={genderFilter}
-                      onChange={(e) => setGenderFilter(e.target.value)}
-                      className="flex h-10 w-full rounded-md border border-white/30 bg-white/20 px-3 py-2 text-white focus:ring-2 focus:ring-white/50 focus:outline-none"
-                    >
-                      <option value="" className="text-gray-900">Any</option>
-                      <option value="male" className="text-gray-900">Male</option>
-                      <option value="female" className="text-gray-900">Female</option>
-                      <option value="other" className="text-gray-900">Other</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-white">Country</Label>
-                    <Input
-                      placeholder="Filter by country"
-                      value={countryFilter}
-                      onChange={(e) => setCountryFilter(e.target.value)}
-                      className="bg-white/20 border-white/30 text-white placeholder:text-white/60 focus:ring-white/50"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-white">City</Label>
-                    <Input
-                      placeholder="Filter by city"
-                      value={cityFilter}
-                      onChange={(e) => setCityFilter(e.target.value)}
-                      className="bg-white/20 border-white/30 text-white placeholder:text-white/60 focus:ring-white/50"
-                    />
-                  </div>
-                </div>
-                
-                {/* Show only users looking for chat filter */}
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="lookingForChat"
-                    checked={showOnlyLookingForChat}
-                    onChange={(e) => setShowOnlyLookingForChat(e.target.checked)}
-                    className="rounded border-white/30 bg-white/20 text-pink-500 focus:ring-pink-400"
-                  />
-                  <Label htmlFor="lookingForChat" className="text-white">
-                    Show only users actively looking for chat
-                  </Label>
-                </div>
-                
-                <div className="flex justify-end">
-                  <Button
-                    onClick={clearFilters}
-                    variant="outline"
-                    className="bg-white/20 border-white/30 text-white hover:bg-white/30"
-                  >
-                    Clear Filters
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
+
+        {/* Filter Panel */}
+        {showFilters && (
+          <Card className="bg-background border-border mb-4">
+            <CardHeader>
+              <CardTitle className="text-foreground text-sm">Filter Options</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-foreground text-xs">Gender</Label>
+                  <select
+                    value={genderFilter}
+                    onChange={(e) => setGenderFilter(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-2 text-foreground text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+                  >
+                    <option value="">Any</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground text-xs">Country</Label>
+                  <Input
+                    placeholder="Filter by country"
+                    value={countryFilter}
+                    onChange={(e) => setCountryFilter(e.target.value)}
+                    className="bg-background border-border text-foreground placeholder:text-muted-foreground text-sm focus:ring-primary h-9"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground text-xs">City</Label>
+                  <Input
+                    placeholder="Filter by city"
+                    value={cityFilter}
+                    onChange={(e) => setCityFilter(e.target.value)}
+                    className="bg-background border-border text-foreground placeholder:text-muted-foreground text-sm focus:ring-primary h-9"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="lookingForChat"
+                  checked={showOnlyLookingForChat}
+                  onChange={(e) => setShowOnlyLookingForChat(e.target.checked)}
+                  className="rounded border-border bg-background text-primary focus:ring-primary"
+                />
+                <Label htmlFor="lookingForChat" className="text-foreground text-sm">
+                  Show only users actively looking for chat
+                </Label>
+              </div>
+              
+              <div className="flex justify-end">
+                <Button
+                  onClick={clearFilters}
+                  variant="outline"
+                  size="sm"
+                  className="bg-background border-border text-muted-foreground hover:bg-muted"
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* User List */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="text-white/70">Loading online users...</div>
+            <div className="text-muted-foreground">Loading online users...</div>
           </div>
         ) : filteredUsers.length === 0 ? (
           <div className="flex items-center justify-center h-64">
-            <div className="text-center text-white/70">
+            <div className="text-center text-muted-foreground">
               <UserIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg mb-2">No users found</p>
-              <p>Try adjusting your filters or check back later</p>
+              <p className="text-sm">Try adjusting your filters or check back later</p>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-1">
             {filteredUsers.map((user) => (
-              <Card
+              <div
                 key={user.user_id}
-                className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all group"
+                onClick={() => onUserSelect(user)}
+                className="flex items-center gap-3 p-4 hover:bg-muted active:bg-secondary cursor-pointer transition-colors border-b border-border"
               >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-white text-lg truncate">
-                        {user.name}
-                      </CardTitle>
-                      <CardDescription className="text-white/70 truncate">
-                        @{user.username}
-                      </CardDescription>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge className="bg-green-500/20 text-green-300 border-green-500/30 text-xs">
-                        Online
-                      </Badge>
-                      {(user as any).looking_for_chat && (
-                        <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/30 text-xs">
-                          Looking for chat
-                        </Badge>
-                      )}
-                    </div>
+                <div className="relative">
+                
+                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background"></div>
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium text-foreground truncate text-base">{user.name}</h3>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">{getTimeAgo(user.last_seen)}</span>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center gap-4 text-white/80 text-sm">
-                    {user.age && (
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        <span>{user.age}</span>
-                      </div>
-                    )}
-                    {user.gender && (
-                      <Badge variant="outline" className="border-white/30 text-white/80 capitalize text-xs">
-                        {user.gender}
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  {(user.city || user.country) && (
-                    <div className="flex items-center gap-1 text-white/70 text-sm">
-                      <MapPin className="w-4 h-4" />
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    {user.city || user.country ? (
                       <span className="truncate">
                         {[user.city, user.country].filter(Boolean).join(', ')}
                       </span>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="text-white/60 text-xs">
-                      Last seen: {getTimeAgo(user.last_seen)}
-                    </div>
-                    <Button
-                      onClick={() => handleStartChat(user)}
-                      size="sm"
-                      className="bg-gradient-to-r from-pink-500 to-violet-500 hover:from-pink-600 hover:to-violet-600 text-white shadow-lg transform hover:scale-105 transition-all"
-                    >
-                      <MessageCircle className="w-4 h-4 mr-1" />
-                      Chat
-                    </Button>
+                    ) : (
+                      <span>Location not specified</span>
+                    )}
+                    {(user as any).looking_for_chat && (
+                      <Badge className="bg-primary/20 text-primary border-primary/30 text-xs">
+                        Looking for chat
+                      </Badge>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         )}
       </div>
 
       {/* Status Info */}
-      <div className="mt-4 text-center text-white/60 text-sm">
+      <div className="p-4 text-center text-muted-foreground text-sm border-t border-border">
         <p>
           {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''} online
           {showOnlyLookingForChat && ' and looking for chat'}

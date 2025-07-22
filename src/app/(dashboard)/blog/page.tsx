@@ -48,12 +48,12 @@ export default async function Blog() {
   const { posts, featuredPosts, categories, popularPosts } = await fetchBlogData();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-purple-800">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-white mb-4">QuickChat Blog</h1>
-          <p className="text-xl text-white/80 max-w-2xl mx-auto">
+          <h1 className="text-5xl font-bold text-foreground mb-4">QuickChat Blog</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Insights, tips, and trends in online communication and digital connections
           </p>
         </div>
@@ -62,15 +62,15 @@ export default async function Blog() {
         {featuredPosts.length > 0 && (
           <section className="mb-12">
             <div className="flex items-center mb-6">
-              <Star className="w-6 h-6 text-yellow-300 mr-2" />
-              <h2 className="text-3xl font-bold text-white">Featured Articles</h2>
+              <Star className="w-6 h-6 text-primary mr-2" />
+              <h2 className="text-3xl font-bold text-foreground">Featured Articles</h2>
             </div>
             <div className="grid md:grid-cols-3 gap-6">
               {featuredPosts.map((post: BlogPost) => (
                 <Link
                   key={post.id}
                   href={`/blog/${post.slug}`}
-                  className="group bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300 transform hover:scale-105"
+                  className="group bg-secondary backdrop-blur-lg rounded-2xl p-6 border border-border hover:bg-muted transition-all duration-300 transform hover:scale-105"
                 >
                   {post.featured_image_url && (
                     <Image
@@ -81,17 +81,17 @@ export default async function Blog() {
                       className="w-full h-48 object-cover rounded-xl mb-4"
                     />
                   )}
-                  <h3 className="text-xl font-bold text-white mb-2 group-hover:text-yellow-300 transition-colors">
+                  <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
                     {post.title}
                   </h3>
-                  <p className="text-white/70 mb-4 line-clamp-3">{post.excerpt}</p>
-                  <div className="flex items-center justify-between text-sm text-white/60">
+                  <p className="text-muted-foreground mb-4 line-clamp-3">{post.excerpt}</p>
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <div className="flex items-center">
                       <Calendar className="w-4 h-4 mr-1" />
                       {format(new Date(post.published_at), 'MMM dd, yyyy')}
                     </div>
                     {post.category && (
-                      <span className="bg-white/20 px-2 py-1 rounded-full text-xs">
+                      <span className="bg-secondary px-2 py-1 rounded-full text-xs">
                         {post.category}
                       </span>
                     )}
@@ -105,13 +105,13 @@ export default async function Blog() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2">
-            <h2 className="text-3xl font-bold text-white mb-6">Recent Posts</h2>
+            <h2 className="text-3xl font-bold text-foreground mb-6">Recent Posts</h2>
             <div className="space-y-6">
               {posts.map((post: BlogPost) => (
                 <Link
                   key={post.id}
                   href={`/blog/${post.slug}`}
-                  className="group block bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300"
+                  className="group block bg-secondary backdrop-blur-lg rounded-2xl p-6 border border-border hover:bg-muted transition-all duration-300"
                 >
                   <div className="flex gap-6">
                     {post.featured_image_url && (
@@ -126,11 +126,11 @@ export default async function Blog() {
                       </div>
                     )}
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-white mb-2 group-hover:text-yellow-300 transition-colors">
+                      <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
                         {post.title}
                       </h3>
-                      <p className="text-white/70 mb-4 line-clamp-2">{post.excerpt}</p>
-                      <div className="flex items-center gap-4 text-sm text-white/60">
+                      <p className="text-muted-foreground mb-4 line-clamp-2">{post.excerpt}</p>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center">
                           <Calendar className="w-4 h-4 mr-1" />
                           {format(new Date(post.published_at), 'MMM dd, yyyy')}
@@ -140,17 +140,17 @@ export default async function Blog() {
                           {post.view_count} views
                         </div>
                         {post.category && (
-                          <span className="bg-white/20 px-2 py-1 rounded-full text-xs">
+                          <span className="bg-secondary px-2 py-1 rounded-full text-xs">
                             {post.category}
                           </span>
                         )}
                       </div>
                       {post.tags && post.tags.length > 0 && (
                         <div className="flex items-center gap-2 mt-2">
-                          <Tag className="w-4 h-4 text-white/40" />
+                          <Tag className="w-4 h-4 text-muted-foreground" />
                           <div className="flex gap-1 flex-wrap">
                             {post.tags.slice(0, 3).map((tag: string) => (
-                              <span key={tag} className="text-xs text-white/60 bg-white/10 px-2 py-1 rounded">
+                              <span key={tag} className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">
                                 {tag}
                               </span>
                             ))}
@@ -167,14 +167,14 @@ export default async function Blog() {
           {/* Sidebar */}
           <div className="space-y-8">
             {/* Categories */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-              <h3 className="text-xl font-bold text-white mb-4">Categories</h3>
+            <div className="bg-secondary backdrop-blur-lg rounded-2xl p-6 border border-border">
+              <h3 className="text-xl font-bold text-foreground mb-4">Categories</h3>
               <div className="space-y-2">
                 {categories.map((category: Category) => (
                   <Link
                     key={category.id}
                     href={`/blog/category/${category.slug}`}
-                    className="block text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-all"
+                    className="block text-muted-foreground hover:text-foreground hover:bg-secondary p-2 rounded-lg transition-all"
                   >
                     {category.name}
                   </Link>
@@ -184,10 +184,10 @@ export default async function Blog() {
 
             {/* Popular Posts */}
             {popularPosts.length > 0 && (
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+              <div className="bg-secondary backdrop-blur-lg rounded-2xl p-6 border border-border">
                 <div className="flex items-center mb-4">
-                  <TrendingUp className="w-5 h-5 text-yellow-300 mr-2" />
-                  <h3 className="text-xl font-bold text-white">Popular Posts</h3>
+                  <TrendingUp className="w-5 h-5 text-primary mr-2" />
+                  <h3 className="text-xl font-bold text-foreground">Popular Posts</h3>
                 </div>
                 <div className="space-y-3">
                   {popularPosts.map((post: PopularPost) => (
@@ -196,10 +196,10 @@ export default async function Blog() {
                       href={`/blog/${post.slug}`}
                       className="block group"
                     >
-                      <h4 className="text-white/90 group-hover:text-white font-medium text-sm mb-1 line-clamp-2">
+                      <h4 className="text-muted-foreground group-hover:text-foreground font-medium text-sm mb-1 line-clamp-2">
                         {post.title}
                       </h4>
-                      <div className="flex items-center gap-2 text-xs text-white/60">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Clock className="w-3 h-3" />
                         {post.view_count} views
                       </div>
@@ -210,13 +210,13 @@ export default async function Blog() {
             )}
 
             {/* Tag Cloud */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-              <h3 className="text-xl font-bold text-white mb-4">Popular Tags</h3>
+            <div className="bg-secondary backdrop-blur-lg rounded-2xl p-6 border border-border">
+              <h3 className="text-xl font-bold text-foreground mb-4">Popular Tags</h3>
               <div className="flex flex-wrap gap-2">
                 {['online chat', 'dating tips', 'privacy', 'strangers', 'conversation', 'digital communication', 'safety', 'relationships'].map((tag) => (
                   <span
                     key={tag}
-                    className="bg-white/20 hover:bg-white/30 text-white/80 px-3 py-1 rounded-full text-sm cursor-pointer transition-colors"
+                    className="bg-muted hover:bg-secondary text-muted-foreground px-3 py-1 rounded-full text-sm cursor-pointer transition-colors"
                   >
                     {tag}
                   </span>
@@ -230,7 +230,7 @@ export default async function Blog() {
         <div className="text-center mt-12">
           <Link
             href="/"
-            className="inline-flex items-center px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-xl transition-colors"
+            className="inline-flex items-center px-6 py-3 bg-secondary hover:bg-muted text-foreground rounded-xl transition-colors"
           >
             ← Back to QuickChat
           </Link>

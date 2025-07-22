@@ -168,21 +168,21 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-purple-600 via-pink-500 to-purple-800">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-background">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <div className="p-4 rounded-full bg-white/20 backdrop-blur-sm">
-              <UserIcon className="w-12 h-12 text-white" />
+            <div className="p-4 rounded-full bg-secondary backdrop-blur-sm">
+              <UserIcon className="w-12 h-12 text-foreground" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Your Profile</h1>
-          <p className="text-white/80">View and edit your information</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Your Profile</h1>
+          <p className="text-muted-foreground">View and edit your information</p>
         </div>
-        <Card className="bg-white/10 backdrop-blur-lg border-white/20 shadow-2xl">
+        <Card className="bg-secondary backdrop-blur-lg border-border shadow-2xl">
           <CardHeader className="text-center">
-            <CardTitle className="text-white">Profile Information</CardTitle>
-            <CardDescription className="text-white/70">
+            <CardTitle className="text-foreground">Profile Information</CardTitle>
+            <CardDescription className="text-muted-foreground">
               {editMode ? "Edit your info and save changes" : "Your current profile details"}
             </CardDescription>
           </CardHeader>
@@ -191,7 +191,7 @@ const ProfilePage = () => {
               <form onSubmit={handleSave} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-white">Name *</Label>
+                    <Label htmlFor="name" className="text-foreground">Name *</Label>
                     <Input
                       id="name"
                       name="name"
@@ -203,7 +203,7 @@ const ProfilePage = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="username" className="text-white">Username *</Label>
+                    <Label htmlFor="username" className="text-foreground">Username *</Label>
                     <Input
                       id="username"
                       name="username"
@@ -217,7 +217,7 @@ const ProfilePage = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="gender" className="text-white">Gender</Label>
+                    <Label htmlFor="gender" className="text-foreground">Gender</Label>
                     <select
                       id="gender"
                       name="gender"
@@ -233,7 +233,7 @@ const ProfilePage = () => {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="age" className="text-white">Age</Label>
+                    <Label htmlFor="age" className="text-foreground">Age</Label>
                     <Input
                       id="age"
                       name="age"
@@ -248,7 +248,7 @@ const ProfilePage = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="country" className="text-white">Country</Label>
+                    <Label htmlFor="country" className="text-foreground">Country</Label>
                     <Input
                       id="country"
                       name="country"
@@ -259,7 +259,7 @@ const ProfilePage = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="city" className="text-white">City</Label>
+                    <Label htmlFor="city" className="text-foreground">City</Label>
                     <Input
                       id="city"
                       name="city"
@@ -285,35 +285,35 @@ const ProfilePage = () => {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-white">Name</Label>
+                    <Label className="text-foreground">Name</Label>
                     <div className="text-white/90 font-medium mt-1">{profile?.name || "-"}</div>
                   </div>
                   <div>
-                    <Label className="text-white">Username</Label>
+                    <Label className="text-foreground">Username</Label>
                     <div className="text-white/90 font-medium mt-1">{profile?.username || "-"}</div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-white">Gender</Label>
+                    <Label className="text-foreground">Gender</Label>
                     <div className="text-white/90 font-medium mt-1">{profile?.gender || "-"}</div>
                   </div>
                   <div>
-                    <Label className="text-white">Age</Label>
+                    <Label className="text-foreground">Age</Label>
                     <div className="text-white/90 font-medium mt-1">{profile?.age ?? "-"}</div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-white">Country</Label>
+                    <Label className="text-foreground">Country</Label>
                     <div className="text-white/90 font-medium mt-1">{profile?.country || "-"}</div>
                   </div>
                   <div>
-                    <Label className="text-white">City</Label>
+                    <Label className="text-foreground">City</Label>
                     <div className="text-white/90 font-medium mt-1">{profile?.city || "-"}</div>
                   </div>
                 </div>
-                <Button onClick={handleEdit} className="w-full mt-6 bg-gradient-to-r from-pink-500 to-violet-500 text-white font-bold py-3 rounded-lg transition-all duration-300 flex items-center justify-center">
+                <Button onClick={handleEdit} className="w-full mt-6 bg-primary text-primary-foreground font-bold py-3 rounded-lg transition-all duration-300 flex items-center justify-center">
                   <Pencil className="mr-2 h-4 w-4" /> Edit
                 </Button>
               </div>

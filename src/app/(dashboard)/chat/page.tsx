@@ -137,8 +137,8 @@ const ChatPage = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-500 to-purple-800">
-        <div className="text-white text-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-foreground text-center">
           <p>Loading...</p>
         </div>
       </div>
@@ -146,29 +146,29 @@ const ChatPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-purple-800">
+    <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto h-screen flex flex-col">
         {/* Header */}
-        <div className="bg-white/10 backdrop-blur-lg border-b border-white/20 p-4">
+        <div className="bg-secondary backdrop-blur-lg border-b border-border p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => router.push("/")}
-                className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                className="p-2 rounded-full bg-secondary hover:bg-muted transition-colors"
               >
-                <ArrowLeft className="w-5 h-5 text-white" />
+                <ArrowLeft className="w-5 h-5 text-foreground" />
               </button>
               <div className="flex items-center space-x-2">
-                <Users className="w-6 h-6 text-white" />
+                <Users className="w-6 h-6 text-foreground" />
                 <div>
-                  <h1 className="text-xl font-bold text-white">Global Chat</h1>
-                  <p className="text-white/70 text-sm">Chat with everyone</p>
+                  <h1 className="text-xl font-bold text-foreground">Global Chat</h1>
+                  <p className="text-muted-foreground text-sm">Chat with everyone</p>
                 </div>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-white/70 text-sm">Signed in as</p>
-              <p className="text-white font-medium">@{user.email}</p>
+              <p className="text-muted-foreground text-sm">Signed in as</p>
+              <p className="text-foreground font-medium">@{user.email}</p>
             </div>
           </div>
         </div>
@@ -177,11 +177,11 @@ const ChatPage = () => {
           <ScrollArea className="h-full p-4">
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
-                <div className="text-white/70">Loading messages...</div>
+                <div className="text-foreground/70">Loading messages...</div>
               </div>
             ) : messages.length === 0 ? (
               <div className="flex items-center justify-center h-full">
-                <div className="text-center text-white/70">
+                <div className="text-center text-foreground/70">
                   <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p className="text-lg mb-2">No messages yet</p>
                   <p>Be the first to start the conversation!</p>
@@ -199,8 +199,8 @@ const ChatPage = () => {
                       <div
                         className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-lg ${
                           isOwnMessage
-                            ? "bg-gradient-to-r from-pink-500 to-violet-500 text-white"
-                            : "bg-white/20 backdrop-blur-sm text-white border border-white/30"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-secondary text-foreground border border-border"
                         }`}
                       >
                         <div className="flex items-center space-x-2 mb-1">
@@ -227,22 +227,22 @@ const ChatPage = () => {
           </ScrollArea>
         </div>
         {/* Message Input */}
-        <div className="bg-white/10 backdrop-blur-lg border-t border-white/20 p-4">
+        <div className="bg-secondary backdrop-blur-lg border-t border-border p-4">
           <div className="flex items-center space-x-3">
             <textarea
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Type your message..."
-              className="flex-1 bg-white/20 backdrop-blur-sm text-white placeholder-white/60 rounded-2xl px-4 py-3 border border-white/30 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent resize-none max-h-32"
+              className="flex-1 bg-secondary text-foreground placeholder-muted-foreground rounded-2xl px-4 py-3 border border-border focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none max-h-32"
               rows={1}
             />
             <button
               onClick={sendMessage}
               disabled={!newMessage.trim()}
-              className="p-3 rounded-full bg-gradient-to-r from-pink-500 to-violet-500 hover:from-pink-600 hover:to-violet-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 shadow-lg"
+              className="p-3 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 shadow-lg"
             >
-              <Send className="w-5 h-5 text-white" />
+              <Send className="w-5 h-5 text-primary-foreground" />
             </button>
           </div>
         </div>

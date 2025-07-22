@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-
 import { User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -10,7 +9,6 @@ import { toast } from 'sonner';
 import ActiveChat from './_components/ActiveChat';
 import UserDiscovery from './_components/UserDiscovery';
 import { supabase } from '@/lib/client';
-
 
 export interface OnlineUser {
   user_id: string;
@@ -35,7 +33,23 @@ const ChatPage: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [activeChat, setActiveChat] = useState<ChatRoom | null>(null);
   const [chatPartner, setChatPartner] = useState<OnlineUser | null>(null);
+  const [isMobileView, setIsMobileView] = useState(false);
+  const [showChatList, setShowChatList] = useState(true);
   const router = useRouter();
+
+  // Check for mobile view
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobileView(window.innerWidth < 768);
+      if (window.innerWidth >= 768) {
+        setShowChatList(true);
+      }
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     // Check for current user
@@ -116,6 +130,11 @@ const ChatPage: React.FC = () => {
 
       setActiveChat(chatRoom);
       setChatPartner(selectedUser);
+      
+      // Handle mobile view
+      if (isMobileView) {
+        setShowChatList(false);
+      }
     } catch (error) {
       console.error('Error creating/finding chat room:', error);
       toast.error('Failed to start chat');
@@ -125,6 +144,7 @@ const ChatPage: React.FC = () => {
   const handleBackToDiscovery = () => {
     setActiveChat(null);
     setChatPartner(null);
+    setShowChatList(true);
   };
 
   const handleEndChat = async () => {
@@ -141,6 +161,7 @@ const ChatPage: React.FC = () => {
 
       setActiveChat(null);
       setChatPartner(null);
+      setShowChatList(true);
       toast.success('Chat ended');
     } catch (error) {
       console.error('Error ending chat:', error);
@@ -150,8 +171,8 @@ const ChatPage: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-500 to-purple-800">
-        <div className="text-white text-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-muted-foreground text-center">
           <p>Loading...</p>
         </div>
       </div>
@@ -159,47 +180,68 @@ const ChatPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-purple-800">
-      <div className="max-w-6xl mx-auto h-screen flex flex-col">
+    <div className="h-screen bg-background flex">
+      {/* Left Sidebar - User Discovery */}
+      <div className={`${
+        isMobileView 
+          ? (showChatList ? 'w-full' : 'hidden') 
+          : 'w-full md:w-1/3'
+      } bg-secondary border-r border-border flex flex-col`}>
         {/* Header */}
-        <div className="bg-white/10 backdrop-blur-lg border-b border-white/20 p-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-muted p-4 border-b border-border">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => router.push('/')}
-                className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                className="p-2 text-muted-foreground hover:bg-secondary rounded-full transition-colors"
               >
-                <ArrowLeft className="w-5 h-5 text-white" />
+                <ArrowLeft className="w-5 h-5" />
               </button>
               <div>
-                <h1 className="text-xl font-bold text-white">
+                <h1 className="text-lg font-medium text-foreground">
                   {activeChat ? `Chat with ${chatPartner?.name}` : 'Filtered Chat'}
                 </h1>
-                <p className="text-white/70 text-sm">
-                  {activeChat ? 'Private conversation' : 'Find and chat with people'}
-                </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Main Content */}
+        {/* User Discovery Component */}
         <div className="flex-1 overflow-hidden">
-          {activeChat && chatPartner ? (
-            <ActiveChat
-              chatRoom={activeChat}
-              chatPartner={chatPartner}
-              currentUser={user}
-              onBack={handleBackToDiscovery}
-              onEndChat={handleEndChat}
-            />
-          ) : (
-            <UserDiscovery
-              currentUser={user}
-              onUserSelect={handleUserSelect}
-            />
-          )}
+          <UserDiscovery
+            currentUser={user}
+            onUserSelect={handleUserSelect}
+            isMobileView={isMobileView}
+          />
         </div>
+      </div>
+
+      {/* Right Side - Chat Area */}
+      <div className={`${
+        isMobileView 
+          ? (showChatList ? 'hidden' : 'w-full') 
+          : 'flex-1'
+      } flex flex-col`}>
+        {activeChat && chatPartner ? (
+          <ActiveChat
+            chatRoom={activeChat}
+            chatPartner={chatPartner}
+            currentUser={user}
+            onBack={handleBackToDiscovery}
+            onEndChat={handleEndChat}
+            isMobileView={isMobileView}
+          />
+        ) : (
+          <div className={`flex-1 flex items-center justify-center bg-background ${isMobileView ? 'hidden' : ''}`}>
+            <div className="text-center">
+              <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <ArrowLeft className="w-12 h-12 text-muted-foreground" />
+              </div>
+              <h2 className="text-2xl font-light text-muted-foreground mb-2">Filtered Chat</h2>
+              <p className="text-muted-foreground px-4">Select a user from the list to start chatting.</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

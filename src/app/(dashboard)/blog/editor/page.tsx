@@ -9,10 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 
 import { Save, Eye, Calendar, Tag, Image, ArrowLeft } from 'lucide-react';
-import { Category } from '@/lib/types';
+
 import { supabase } from '@/lib/client';
 import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
+import { Category } from '@/lib/types';
 
 interface FormData {
   title: string;
@@ -185,19 +186,19 @@ export default function BlogEditor() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-purple-800">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
               onClick={() => router.push('/blog')}
-              className="text-white hover:bg-white/20"
+              className="text-foreground hover:bg-secondary"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Blog
             </Button>
-            <h1 className="text-3xl font-bold text-white">
+            <h1 className="text-3xl font-bold text-foreground">
               {isEditing ? 'Edit Post' : 'New Post'}
             </h1>
           </div>
@@ -206,7 +207,7 @@ export default function BlogEditor() {
               onClick={() => handleSave('draft')}
               disabled={loading}
               variant="outline"
-              className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+              className="bg-secondary border-border text-foreground hover:bg-muted"
             >
               <Save className="w-4 h-4 mr-2" />
               Save Draft
@@ -214,7 +215,7 @@ export default function BlogEditor() {
             <Button
               onClick={() => handleSave('published')}
               disabled={loading}
-              className="bg-green-500 hover:bg-green-600 text-white"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               <Eye className="w-4 h-4 mr-2" />
               Publish
