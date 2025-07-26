@@ -5,15 +5,10 @@ import { User } from '@supabase/supabase-js';
 import { 
   Send, 
   ArrowLeft, 
-  Phone, 
-  Video, 
   MoreVertical, 
-  Paperclip, 
-  Smile, 
-  Mic,
-  Check,
-  CheckCheck,
-  Search
+  Smile,
+  Shield,
+  AlertTriangle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ChatRoom, OnlineUser } from '../page';
@@ -42,7 +37,12 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const emojis = ['😊', '😂', '😍', '😔', '😎', '🤔', '👍', '👎', '❤️', '🎉', '🔥', '💯'];
 
   useEffect(() => {
     loadMessages();
@@ -139,11 +139,19 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
         toast.error('Failed to send message');
       } else {
         setNewMessage('');
+        if (textareaRef.current) {
+          textareaRef.current.style.height = 'auto';
+        }
       }
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    sendMessage();
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -153,10 +161,19 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
     }
   };
 
-  const getMessageStatus = (isOwn: boolean) => {
-    if (!isOwn) return null;
-    // For now, we'll show delivered status. You can implement read receipts later
-    return <CheckCheck className="w-4 h-4 text-primary" />;
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNewMessage(e.target.value);
+    
+    // Auto-resize textarea
+    const textarea = e.target;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+  };
+
+  const addEmoji = (emoji: string) => {
+    setNewMessage(prev => prev + emoji);
+    setShowEmojiPicker(false);
+    textareaRef.current?.focus();
   };
 
   const formatTime = (timestamp: string) => {
@@ -166,75 +183,129 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
     });
   };
 
-  // Generate avatar URL (you can replace this with actual avatars)
-  const getAvatarUrl = (userId: string) => {
-    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'];
-    const color = colors[parseInt(userId.slice(-1), 16) % colors.length];
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(chatPartner.name)}&background=${color.slice(1)}&color=fff&size=40`;
+  const getCountryFlag = (country: string) => {
+    // Simple country to flag mapping - you can expand this
+    const flagMap: { [key: string]: string } = {
+      'United States': '🇺🇸',
+      'Canada': '🇨🇦',
+      'United Kingdom': '🇬🇧',
+      'Germany': '🇩🇪',
+      'France': '🇫🇷',
+      'India': '🇮🇳',
+      'China': '🇨🇳',
+      'Japan': '🇯🇵',
+      'Brazil': '🇧🇷',
+      'Australia': '🇦🇺'
+    };
+    return flagMap[country] || '🌍';
+  };
+
+  const handleBlockUser = () => {
+    // Implement block user functionality
+    toast.info('Block user functionality to be implemented');
+  };
+
+  const handleReportUser = () => {
+    // Implement report user functionality
+    toast.info('Report user functionality to be implemented');
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-white">
       {/* Chat Header */}
-      <div className="bg-muted p-4 border-b border-border flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {isMobileView && (
-            <button 
-              onClick={onBack}
-              className="p-1 text-muted-foreground hover:bg-secondary rounded-full transition-colors mr-2"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-          )}
-          <div className="relative">
-            <img
-              src={getAvatarUrl(chatPartner.user_id)}
-              alt={chatPartner.name}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover"
-            />
-            <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-primary rounded-full border-2 border-background"></div>
-          </div>
-          <div>
-            <h3 className="font-medium text-foreground text-sm sm:text-base">{chatPartner.name}</h3>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              {isTyping ? 'typing...' : 'online'}
-            </p>
+      <div className="flex items-center justify-between p-4 bg-white border-b border-gray-200 relative">
+        {/* Left side - Back button and user info */}
+        <div className="flex items-center space-x-3">
+          <button 
+            onClick={onBack}
+            className="md:hidden p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </button>
+          
+          <div className="flex items-center space-x-3">
+            <div className="relative">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                {chatPartner.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 border-2 border-white rounded-full bg-green-500" />
+            </div>
+            
+            <div>
+              <div className="flex items-center space-x-2">
+                <h3 className="font-semibold text-gray-900">{chatPartner.name}</h3>
+                <span className="text-lg">{getCountryFlag(chatPartner.country)}</span>
+              </div>
+              <p className="text-sm text-gray-500">
+                {isTyping ? 'typing...' : 'Online'}
+              </p>
+            </div>
           </div>
         </div>
-        
-        <div className="flex items-center gap-1 sm:gap-2">
-          <button className="p-2 text-muted-foreground hover:bg-secondary rounded-full transition-colors">
-            <Video className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-          <button className="p-2 text-muted-foreground hover:bg-secondary rounded-full transition-colors">
-            <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-          {!isMobileView && (
-            <button className="p-2 text-muted-foreground hover:bg-secondary rounded-full transition-colors">
-              <Search className="w-5 h-5" />
-            </button>
-          )}
-          <button 
-            onClick={onEndChat}
-            className="p-2 text-muted-foreground hover:bg-secondary rounded-full transition-colors"
+
+        {/* Right side - Actions */}
+        <div className="relative">
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
-            <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5" />
+            <MoreVertical className="w-5 h-5 text-gray-600" />
           </button>
+
+          {/* Dropdown menu */}
+          {showMenu && (
+            <div className="absolute right-0 top-12 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10 min-w-[160px]">
+              <button
+                onClick={() => {
+                  handleBlockUser();
+                  setShowMenu(false);
+                }}
+                className="flex items-center space-x-2 w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors"
+              >
+                <Shield className="w-4 h-4 text-gray-600" />
+                <span className="text-gray-700">Block User</span>
+              </button>
+              <button
+                onClick={() => {
+                  handleReportUser();
+                  setShowMenu(false);
+                }}
+                className="flex items-center space-x-2 w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-red-600"
+              >
+                <AlertTriangle className="w-4 h-4" />
+                <span>Report User</span>
+              </button>
+              <button
+                onClick={() => {
+                  onEndChat();
+                  setShowMenu(false);
+                }}
+                className="flex items-center space-x-2 w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-red-600"
+              >
+                <span>End Chat</span>
+              </button>
+            </div>
+          )}
+
+          {/* Overlay to close menu */}
+          {showMenu && (
+            <div 
+              className="fixed inset-0 z-0" 
+              onClick={() => setShowMenu(false)}
+            />
+          )}
         </div>
       </div>
 
       {/* Messages Area */}
-      <div 
-        className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 bg-background"
-        style={{}}
-      >
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-muted-foreground">Loading messages...</div>
+            <div className="text-gray-500">Loading messages...</div>
           </div>
         ) : messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center text-muted-foreground">
+            <div className="text-center text-gray-500">
               <p className="text-lg mb-2">Start the conversation!</p>
               <p>Send the first message to {chatPartner.name}</p>
             </div>
@@ -244,76 +315,116 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${message.is_own_message ? 'justify-end' : 'justify-start'} mb-2`}
+                className={`flex ${message.is_own_message ? 'justify-end' : 'justify-start'}`}
               >
-                <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-sm ${
-                    message.is_own_message
-                      ? 'bg-primary text-primary-foreground rounded-br-none'
-                      : 'bg-secondary text-foreground border border-border rounded-bl-none'
-                  }`}
-                >
-                  <p className="text-sm">{message.content}</p>
-                  <div className={`flex items-center justify-end gap-1 mt-1 ${
-                    message.is_own_message ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                <div className="group relative max-w-xs sm:max-w-md">
+                  <div
+                    className={`px-4 py-2 rounded-2xl ${
+                      message.is_own_message
+                        ? 'bg-blue-500 text-white rounded-br-md'
+                        : 'bg-white text-gray-900 rounded-bl-md border border-gray-200'
+                    } transition-all duration-200 hover:shadow-md`}
+                  >
+                    <p className="text-sm leading-relaxed break-words">{message.content}</p>
+                  </div>
+                  
+                  {/* Timestamp tooltip */}
+                  <div className={`absolute top-full mt-1 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 ${
+                    message.is_own_message ? 'right-0' : 'left-0'
                   }`}>
-                    <span className="text-xs">{formatTime(message.created_at)}</span>
-                    {getMessageStatus(message.is_own_message)}
+                    {formatTime(message.created_at)}
                   </div>
                 </div>
               </div>
             ))}
-            
+
+            {/* Typing indicator */}
             {isTyping && (
-              <div className="flex justify-start mb-2">
-                <div className="bg-secondary px-4 py-2 rounded-lg rounded-bl-none shadow-sm">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+              <div className="flex justify-start">
+                <div className="bg-white rounded-2xl rounded-bl-md px-4 py-3 max-w-xs border border-gray-200">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                   </div>
                 </div>
               </div>
             )}
+            
             <div ref={messagesEndRef} />
           </>
         )}
       </div>
 
       {/* Message Input */}
-      <div className="bg-muted p-3 sm:p-4 border-t border-border">
-        <div className="flex items-center gap-3">
-          <button className="p-1.5 sm:p-2 text-muted-foreground hover:bg-secondary rounded-full transition-colors">
-            <Smile className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-          <button className="p-1.5 sm:p-2 text-muted-foreground hover:bg-secondary rounded-full transition-colors">
-            <Paperclip className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-          
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              placeholder="Type a message"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="w-full px-4 py-2.5 sm:py-2 bg-background border border-border rounded-full text-sm focus:outline-none focus:border-primary transition-colors"
-            />
-          </div>
-          
-          {newMessage.trim() ? (
-            <button 
-              onClick={sendMessage}
-              className="p-1.5 sm:p-2 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors"
+      <div className="p-4 bg-white border-t border-gray-200">
+        <form onSubmit={handleSubmit} className="relative">
+          <div className="flex items-end space-x-2">
+            {/* Emoji button */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                className="p-2 text-gray-500 hover:text-blue-500 hover:bg-gray-100 rounded-full transition-all duration-200"
+              >
+                <Smile className="w-5 h-5" />
+              </button>
+
+              {/* Emoji picker */}
+              {showEmojiPicker && (
+                <div className="absolute bottom-full mb-2 left-0 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-20">
+                  <div className="grid grid-cols-6 gap-2">
+                    {emojis.map((emoji, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => addEmoji(emoji)}
+                        className="text-lg hover:bg-gray-100 p-1 rounded transition-colors"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Message input */}
+            <div className="flex-1 relative">
+              <textarea
+                ref={textareaRef}
+                value={newMessage}
+                onChange={handleTextareaChange}
+                onKeyPress={handleKeyPress}
+                placeholder="Type a message..."
+                className="w-full resize-none rounded-full px-4 py-2 bg-gray-100 border-0 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200 outline-none"
+                rows={1}
+                style={{ minHeight: '40px', maxHeight: '120px' }}
+              />
+            </div>
+
+            {/* Send button */}
+            <button
+              type="submit"
+              disabled={!newMessage.trim()}
+              className={`p-2 rounded-full transition-all duration-200 ${
+                newMessage.trim()
+                  ? 'bg-blue-500 text-white hover:bg-blue-600 transform hover:scale-105'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
             >
-              <Send className="w-4 h-4 sm:w-5 sm:h-5" />
+              <Send className="w-5 h-5" />
             </button>
-          ) : (
-            <button className="p-1.5 sm:p-2 text-muted-foreground hover:bg-secondary rounded-full transition-colors">
-              <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-          )}
-        </div>
+          </div>
+        </form>
+
+        {/* Overlay to close emoji picker */}
+        {showEmojiPicker && (
+          <div 
+            className="fixed inset-0 z-10" 
+            onClick={() => setShowEmojiPicker(false)}
+          />
+        )}
       </div>
     </div>
   );

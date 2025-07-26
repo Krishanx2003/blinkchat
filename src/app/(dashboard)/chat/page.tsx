@@ -14,7 +14,6 @@ interface Message {
   created_at: string;
   user_name: string;
   username: string;
-  user_id: string; // Add user_id to properly identify message owner
 }
 
 const ChatPage = () => {
@@ -95,7 +94,6 @@ const ChatPage = () => {
             created_at: payload.new.created_at,
             user_name: profileData?.name || "Unknown User",
             username: profileData?.username || "unknown",
-            user_id: payload.new.user_id, // Include user_id for proper ownership check
           };
           setMessages((prev) => [...prev, newMessage]);
         }
@@ -191,8 +189,7 @@ const ChatPage = () => {
           ) : (
             <div className="flex flex-col gap-3 sm:gap-4">
               {messages.map((message) => {
-                // Fix: Use user_id comparison instead of email/username comparison
-                const isOwnMessage = user && message.user_id === user.id;
+                const isOwnMessage = user && message.username === user.email?.split("@")[0];
                 return (
                   <div
                     key={message.id}
@@ -205,31 +202,17 @@ const ChatPage = () => {
                           : "bg-secondary text-foreground border border-border"
                       }`}
                     >
-                      {/* Only show name/time for other users' messages */}
-                      {!isOwnMessage && (
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-xs sm:text-sm">
-                            {message.user_name || message.username}
-                          </span>
-                          <span className="text-[10px] sm:text-xs opacity-70">
-                            {new Date(message.created_at).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        </div>
-                      )}
-                      {/* For own messages, show time in a smaller format */}
-                      {isOwnMessage && (
-                        <div className="flex justify-end mb-1">
-                          <span className="text-[10px] sm:text-xs opacity-70">
-                            {new Date(message.created_at).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-xs sm:text-sm">
+                          {message.user_name || message.username}
+                        </span>
+                        <span className="text-[10px] sm:text-xs opacity-70">
+                          {new Date(message.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
                       <p className="text-xs sm:text-sm md:text-base">
                         {message.content}
                       </p>

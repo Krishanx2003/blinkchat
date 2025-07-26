@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
-import { Search, Filter, MapPin, User as UserIcon, Calendar, MessageCircle, Users } from 'lucide-react';
+import { Search, Filter, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -139,25 +139,35 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
     return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
 
-  // Generate avatar URL
-  const getAvatarUrl = (userId: string, name: string) => {
-    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'];
-    const color = colors[parseInt(userId.slice(-1), 16) % colors.length];
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${color.slice(1)}&color=fff&size=48`;
+  const getCountryFlag = (country: string) => {
+    // Simple country to flag mapping - you can expand this
+    const flagMap: { [key: string]: string } = {
+      'United States': '🇺🇸',
+      'Canada': '🇨🇦',
+      'United Kingdom': '🇬🇧',
+      'Germany': '🇩🇪',
+      'France': '🇫🇷',
+      'India': '🇮🇳',
+      'China': '🇨🇳',
+      'Japan': '🇯🇵',
+      'Brazil': '🇧🇷',
+      'Australia': '🇦🇺'
+    };
+    return flagMap[country] || '🌍';
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white">
       {/* Search */}
-      <div className="p-4">
+      <div className="p-4 border-b border-gray-100">
         <div className="relative mb-4">
-          <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
           <input
             type="text"
             placeholder="Search or start new chat"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 sm:py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:border-primary transition-colors"
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition-all duration-200"
           />
         </div>
 
@@ -167,38 +177,38 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
             onClick={() => setShowFilters(!showFilters)}
             variant="outline"
             size="sm"
-            className="text-muted-foreground border-border hover:bg-muted"
+            className="text-gray-600 border-gray-200 hover:bg-gray-50 bg-white"
           >
             <Filter className="w-4 h-4 mr-2" />
-            {showFilters ? 'Hide Filters' : 'Show Filters'}
+            {showFilters ? 'Hide Filters' : 'Filters'}
           </Button>
           <Button
             onClick={loadOnlineUsers}
             variant="outline"
             size="sm"
-            className="text-muted-foreground border-border hover:bg-muted"
+            className="text-gray-600 border-gray-200 hover:bg-gray-50 bg-white"
           >
             Refresh
           </Button>
-          <div className="ml-auto text-xs text-muted-foreground">
-            {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''} online
+          <div className="ml-auto text-xs text-gray-500 font-medium">
+            {filteredUsers.length} online
           </div>
         </div>
 
         {/* Filter Panel */}
         {showFilters && (
-          <Card className="bg-background border-border mb-4">
-            <CardHeader>
-              <CardTitle className="text-foreground text-sm">Filter Options</CardTitle>
+          <Card className="bg-gray-50 border-gray-200 mb-4">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-gray-900 text-sm font-semibold">Filter Options</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-foreground text-xs">Gender</Label>
+                  <Label className="text-gray-700 text-xs font-medium">Gender</Label>
                   <select
                     value={genderFilter}
                     onChange={(e) => setGenderFilter(e.target.value)}
-                    className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-2 text-foreground text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+                    className="flex h-9 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-200"
                   >
                     <option value="">Any</option>
                     <option value="male">Male</option>
@@ -207,21 +217,21 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-foreground text-xs">Country</Label>
+                  <Label className="text-gray-700 text-xs font-medium">Country</Label>
                   <Input
                     placeholder="Filter by country"
                     value={countryFilter}
                     onChange={(e) => setCountryFilter(e.target.value)}
-                    className="bg-background border-border text-foreground placeholder:text-muted-foreground text-sm focus:ring-primary h-9"
+                    className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm focus:ring-blue-500 h-9 transition-all duration-200"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-foreground text-xs">City</Label>
+                  <Label className="text-gray-700 text-xs font-medium">City</Label>
                   <Input
                     placeholder="Filter by city"
                     value={cityFilter}
                     onChange={(e) => setCityFilter(e.target.value)}
-                    className="bg-background border-border text-foreground placeholder:text-muted-foreground text-sm focus:ring-primary h-9"
+                    className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 text-sm focus:ring-blue-500 h-9 transition-all duration-200"
                   />
                 </div>
               </div>
@@ -232,9 +242,9 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
                   id="lookingForChat"
                   checked={showOnlyLookingForChat}
                   onChange={(e) => setShowOnlyLookingForChat(e.target.checked)}
-                  className="rounded border-border bg-background text-primary focus:ring-primary"
+                  className="rounded border-gray-300 bg-white text-blue-500 focus:ring-blue-500"
                 />
-                <Label htmlFor="lookingForChat" className="text-foreground text-sm">
+                <Label htmlFor="lookingForChat" className="text-gray-700 text-sm">
                   Show only users actively looking for chat
                 </Label>
               </div>
@@ -244,7 +254,7 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
                   onClick={clearFilters}
                   variant="outline"
                   size="sm"
-                  className="bg-background border-border text-muted-foreground hover:bg-muted"
+                  className="bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
                 >
                   Clear Filters
                 </Button>
@@ -258,61 +268,57 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="text-muted-foreground">Loading online users...</div>
+            <div className="text-gray-500">Loading online users...</div>
           </div>
         ) : filteredUsers.length === 0 ? (
           <div className="flex items-center justify-center h-64">
-            <div className="text-center text-muted-foreground">
-              <UserIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg mb-2">No users found</p>
+            <div className="text-center text-gray-500">
+              <UserIcon className="w-12 h-12 mx-auto mb-4 opacity-40" />
+              <p className="text-lg mb-2 font-medium">No users found</p>
               <p className="text-sm">Try adjusting your filters or check back later</p>
             </div>
           </div>
         ) : (
-          <div className="space-y-1">
+          <div className="divide-y divide-gray-100">
             {filteredUsers.map((user) => (
               <div
                 key={user.user_id}
                 onClick={() => onUserSelect(user)}
-                className="flex items-center gap-3 p-4 hover:bg-muted active:bg-secondary cursor-pointer transition-colors border-b border-border"
+                className="flex items-center gap-3 p-4 hover:bg-gray-50 active:bg-gray-100 cursor-pointer transition-all duration-200"
               >
                 <div className="relative">
-                
-                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background"></div>
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                 </div>
                 
                 <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center space-x-2">
+                      <h3 className="font-semibold text-gray-900 truncate text-base">{user.name}</h3>
+                      <span className="text-lg">{getCountryFlag(user.country)}</span>
+                    </div>
+                    <span className="text-xs text-gray-400 whitespace-nowrap ml-2 font-medium">
+                      {getTimeAgo(user.last_seen)}
+                    </span>
+                  </div>
                   <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-foreground truncate text-base">{user.name}</h3>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">{getTimeAgo(user.last_seen)}</span>
+                    <p className="text-sm text-gray-500 truncate">
+                      {user.city || user.country ? (
+                        [user.city, user.country].filter(Boolean).join(', ')
+                      ) : (
+                        '@' + user.username
+                      )}
+                    </p>
+
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    {user.city || user.country ? (
-                      <span className="truncate">
-                        {[user.city, user.country].filter(Boolean).join(', ')}
-                      </span>
-                    ) : (
-                      <span>Location not specified</span>
-                    )}
-                    {(user as any).looking_for_chat && (
-                      <Badge className="bg-primary/20 text-primary border-primary/30 text-xs">
-                        Looking for chat
-                      </Badge>
-                    )}
-                  </div>
+                 
                 </div>
               </div>
             ))}
           </div>
         )}
-      </div>
-
-      {/* Status Info */}
-      <div className="p-4 text-center text-muted-foreground text-sm border-t border-border">
-        <p>
-          {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''} online
-          {showOnlyLookingForChat && ' and looking for chat'}
-        </p>
       </div>
     </div>
   );
