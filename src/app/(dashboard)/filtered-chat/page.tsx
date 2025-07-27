@@ -1,3 +1,4 @@
+// App/(dashboard)/filtered-chat/page.tsx
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -6,13 +7,15 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, MessageCircle, Users, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
-
 import ActiveChat from './_components/ActiveChat';
 import UserDiscovery from './_components/UserDiscovery';
 import { supabase } from '@/lib/client';
 import { cn } from '@/lib/utils';
+import EmptyState from '../_components/EmptyState';
 
 export interface OnlineUser {
+  is_online: boolean; // Changed from unknown to boolean
+  looking_for_chat: boolean; // Changed from any to boolean
   user_id: string;
   name: string;
   username: string;
@@ -89,6 +92,7 @@ const ChatPage: React.FC = () => {
         .upsert({
           user_id: userId,
           is_online: isOnline,
+          looking_for_chat: true, // Add this field if it's required by your schema
           last_seen: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });
@@ -197,22 +201,19 @@ const ChatPage: React.FC = () => {
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Chats</h2>
-            <button 
-              onClick={() => router.push('/dashboard')} 
-              className="p-2 rounded-full hover:bg-gray-100"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
+         
           </div>
         </div>
         
         {/* Chat List Content */}
         <div className="flex-1 overflow-y-auto">
-          <UserDiscovery
-            currentUser={user}
-            onUserSelect={handleUserSelect}
-            isMobileView={isMobileView}
-          />
+        <UserDiscovery
+  currentUser={user}
+  onUserSelect={async (user) => {
+    await handleUserSelect(user);
+  }}
+  isMobileView={isMobileView}
+/>
         </div>
       </div>
 
@@ -222,33 +223,19 @@ const ChatPage: React.FC = () => {
         isMobileView && !showChatList ? 'flex' : 'hidden lg:flex'
       )}>
         {activeChat && chatPartner ? (
-   <ActiveChat 
-   chatRoom={activeChat} 
-   chatPartner={chatPartner}  // Changed from partner to chatPartner
-   currentUser={user}  // Make sure you have access to the current user
-   onBack={() => setShowChatList(true)}
-   onEndChat={() => {
-     setActiveChat(null);
-     setShowChatList(true);
-   }}
-   isMobileView={isMobileView}
- />
+          <ActiveChat 
+            chatRoom={activeChat} 
+            chatPartner={chatPartner}
+            currentUser={user}
+            onBack={() => setShowChatList(true)}
+            onEndChat={() => {
+              setActiveChat(null);
+              setShowChatList(true);
+            }}
+            isMobileView={isMobileView}
+          />
         ) : (
-          <div className="flex-1 flex items-center justify-center bg-gray-50">
-            <div className="text-center p-6 max-w-md">
-              <MessageCircle className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No chat selected</h3>
-              <p className="text-gray-500 mb-4">Select a chat to start messaging</p>
-              {isMobileView && (
-                <button
-                  onClick={() => setShowChatList(true)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  Back to chats
-                </button>
-              )}
-            </div>
-          </div>
+          <EmptyState isDark={false} />
         )}
       </div>
     </div>
