@@ -3,6 +3,7 @@ import { Menu, X, Eye, LogOut } from 'lucide-react';
 import { supabase } from '@/lib/client';
 import { User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -45,8 +46,14 @@ const Header = () => {
           {/* Logo */}
           <div className="flex items-center space-x-2">
             <div className="relative">
-              <Eye className="h-8 w-8 text-[#FFFC00]" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#FFFC00] rounded-full animate-pulse"></div>
+             <Image 
+             src="/blinkchat.jpg"
+             alt="Logo"
+             width={50}
+             height={50}
+             className="w-12 h-12 "
+             />
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#FFD500] rounded-full animate-pulse"></div>
             </div>
             <span className="text-2xl font-bold text-black">BlinkChat</span>
           </div>

@@ -44,7 +44,7 @@ const Page = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-500 to-purple-800">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-white text-center">
           <p>Loading...</p>
         </div>
