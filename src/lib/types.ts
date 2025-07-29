@@ -23,3 +23,15 @@ export type PopularPost = {
   title: string;
   view_count: number;
 };
+
+export type RelatedPost = {
+  id: string | number;
+  slug: string;
+  title: string;
+  excerpt?: string;
+  featured_image_url?: string;
+  published_at: string;
+  category?: string;
+  tags?: string[];
+  view_count?: number;
+};
