@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { MessageCircle, Filter, FileText, User, Settings, Sun, Moon } from 'lucide-react'
 import { useState, useEffect } from 'react'
-
+import Image from 'next/image'
 interface NavigationItem {
   name: string
   href: string
@@ -66,13 +66,19 @@ export function Sidebar() {
       {/* Logo */}
       <div className={cn("p-4 lg:p-6 border-b", isDark ? 'border-gray-800' : 'border-gray-200')}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-            <MessageCircle className="w-6 h-6 text-white" />
+          <div className=" flex items-center justify-center">
+           <Image 
+           src="/blinkchat.jpg"
+           alt="Logo"
+           width={50}
+           height={50}
+           className="w-12 h-12 "
+           />
           </div>
           {!isCollapsed && (
             <div>
               <h1 className={cn("text-xl font-bold", isDark ? 'text-white' : 'text-gray-900')}>
-                BlinkChat
+              TingleTalk
               </h1>
               <p className={cn("text-sm", isDark ? 'text-gray-400' : 'text-gray-500')}>
                 Anonymous & Free

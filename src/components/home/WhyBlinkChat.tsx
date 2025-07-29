@@ -46,7 +46,7 @@ const WhyBlinkChat = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-black mb-4 sm:mb-6 px-4">
-            Why <span className="bg-gradient-to-r from-[#FFFC00] to-[#FFB800] bg-clip-text text-transparent">BlinkChat</span>?
+            Why <span className="bg-gradient-to-r from-[#FFFC00] to-[#FFB800] bg-clip-text text-transparent">TingleTalk</span>?
           </h2>
           <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto px-4">
             We're not just another chat app. We're a movement towards authentic, anonymous connections.

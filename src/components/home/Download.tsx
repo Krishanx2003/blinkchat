@@ -7,7 +7,7 @@ const Download = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-black mb-4 sm:mb-6 px-4">
-            Get Started with <span className="text-[#FFFC00]">BlinkChat</span>
+            Get Started with <span className="text-[#FFFC00]">TingleTalk</span>
           </h2>
           <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto px-4">
             Choose your preferred way to start anonymous chatting. Available on all your devices.
@@ -64,7 +64,7 @@ const Download = () => {
                       <div className="bg-white rounded-lg h-full flex flex-col justify-center items-center">
                         <Tablet className="w-8 sm:w-12 h-8 sm:h-12 text-[#FFFC00] mb-2 sm:mb-4" />
                         <div className="text-center">
-                          <div className="text-xs sm:text-sm font-semibold text-black mb-1 sm:mb-2">BlinkChat</div>
+                          <div className="text-xs sm:text-sm font-semibold text-black mb-1 sm:mb-2">TingleTalk</div>
                           <div className="text-xs text-gray-600">Web Version</div>
                         </div>
                       </div>
@@ -81,7 +81,7 @@ const Download = () => {
                       <div className="bg-white rounded-lg h-full flex flex-col justify-center items-center">
                         <Smartphone className="w-8 sm:w-12 h-8 sm:h-12 text-purple-500 mb-2 sm:mb-4" />
                         <div className="text-center">
-                          <div className="text-xs sm:text-sm font-semibold text-black mb-1 sm:mb-2">BlinkChat</div>
+                          <div className="text-xs sm:text-sm font-semibold text-black mb-1 sm:mb-2">TingleTalk</div>
                           <div className="text-xs text-gray-600">Mobile App</div>
                           <div className="text-xs text-gray-400 mt-1 sm:mt-2">Coming Soon</div>
                         </div>

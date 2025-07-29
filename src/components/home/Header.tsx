@@ -55,7 +55,7 @@ const Header = () => {
              />
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#FFD500] rounded-full animate-pulse"></div>
             </div>
-            <span className="text-2xl font-bold text-black">BlinkChat</span>
+            <span className="text-2xl font-bold text-black">TingleTalk</span>
           </div>
 
           {/* Desktop Navigation */}

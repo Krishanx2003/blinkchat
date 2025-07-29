@@ -35,7 +35,7 @@ const Hero = () => {
             
             <p className="text-lg sm:text-xl md:text-2xl text-gray-800 mb-6 sm:mb-8 max-w-2xl leading-relaxed px-4 lg:px-0">
               Join global and local conversations without revealing your identity. 
-              BlinkChat keeps it fun and safe.
+              TingleTalk keeps it fun and safe.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -67,7 +67,7 @@ const Hero = () => {
                         <div className="w-8 h-8 bg-[#FFFC00] rounded-full flex items-center justify-center">
                           <MessageCircle className="w-4 h-4 text-black" />
                         </div>
-                        <span className="font-bold text-base sm:text-lg">BlinkChat</span>
+                        <span className="font-bold text-base sm:text-lg">TingleTalk</span>
                       </div>
                       <div className="w-8 h-8 bg-green-500 rounded-full"></div>
                     </div>

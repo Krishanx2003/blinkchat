@@ -22,7 +22,7 @@ export default function EmptyState({ isDark }: EmptyStateProps) {
         </div>
         
         <h2 className={`text-2xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-          Welcome to BlinkChat
+          Welcome to TingleTalk
         </h2>
         
         <p className={`text-lg mb-6 ${isDark ? 'text-gray-300' : 'text-gray-600'} leading-relaxed`}>

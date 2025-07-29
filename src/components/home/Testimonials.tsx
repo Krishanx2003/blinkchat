@@ -18,7 +18,7 @@ const Testimonials = () => {
       avatar: "🎭"
     },
     {
-      text: "The anonymity gives me confidence to be myself. Best decision ever joining BlinkChat!",
+      text: "The anonymity gives me confidence to be myself. Best decision ever joining TingleTalk!",
       author: "Anonymous User",
       location: "Tokyo, Japan",
       rating: 5,
@@ -55,7 +55,7 @@ const Testimonials = () => {
             What Our <span className="text-white">Anonymous</span> Users Say
           </h2>
           <p className="text-lg sm:text-xl text-gray-800 max-w-3xl mx-auto px-4">
-            Real testimonials from real people who found their voice through BlinkChat
+            Real testimonials from real people who found their voice through TingleTalk
           </p>
         </div>
 
@@ -112,7 +112,7 @@ const Testimonials = () => {
             Ready to Share Your Story?
           </h3>
           <p className="text-base sm:text-lg md:text-xl text-gray-800 mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
-            Join thousands of anonymous users who've found their voice on BlinkChat
+            Join thousands of anonymous users who've found their voice on TingleTalk
           </p>
           <button className="bg-white text-black px-6 sm:px-8 py-3 sm:py-4 rounded-full font-semibold text-base sm:text-lg hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 shadow-lg">
             Start Your Journey

@@ -13,7 +13,7 @@ const Footer = () => {
                 <Eye className="h-8 w-8 text-[#FFFC00]" />
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#FFFC00] rounded-full animate-pulse"></div>
               </div>
-              <span className="text-xl sm:text-2xl font-bold">BlinkChat</span>
+              <span className="text-xl sm:text-2xl font-bold">TingleTalk</span>
             </div>
             <p className="text-sm sm:text-base text-gray-400 mb-6 max-w-md">
               The anonymous chat platform where authentic conversations happen. 
@@ -91,13 +91,9 @@ const Footer = () => {
         <div className="border-t border-gray-800 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="text-sm sm:text-base text-gray-400 mb-4 md:mb-0 text-center md:text-left">
-              © 2025 BlinkChat. All rights reserved.
+              © 2025 TingleTalk. All rights reserved.
             </div>
-            <div className="flex items-center space-x-2 text-sm sm:text-base text-gray-400">
-              <span>Made with</span>
-              <Heart className="w-4 h-4 text-red-500" />
-              <span>for authentic connections</span>
-            </div>
+          
           </div>
         </div>
 
