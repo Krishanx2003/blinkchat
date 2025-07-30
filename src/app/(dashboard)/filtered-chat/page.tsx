@@ -198,7 +198,7 @@ const ChatPage: React.FC = () => {
         )}
       >
         {/* Header */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Chats</h2>
          
