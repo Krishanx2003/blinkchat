@@ -1,10 +1,11 @@
 // components/home/Hero.tsx
 "use client"
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { User } from '@supabase/supabase-js';
 import { Button } from "@/components/ui/button";
 import { toast } from 'sonner';
+import { supabase } from "@/lib/client";
 
 import chatLogo from "@/assets/chat-logo.png";
 import { ChatBubble } from "../ui/chat-bubble";
@@ -20,20 +21,70 @@ export const HeroSection = () => {
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(false);
+
+  useEffect(() => {
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setCurrentUser(session?.user ?? null);
+    });
+
+    // Check current auth state
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUser(user);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const scrollToSection = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleStartMatching = () => {
-    setIsAuthDialogOpen(true);
+  const checkUserStatusAndRedirect = async (user: User) => {
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("profile_completed")
+        .eq("user_id", user.id)
+        .single();
+
+      if (profile?.profile_completed) {
+        // User has completed profile, redirect directly to chat
+        toast.success("Welcome back! Redirecting to chat...");
+        setTimeout(() => {
+          router.push('/chat');
+        }, 1000);
+      } else {
+        // User needs to complete profile
+        setIsProfileDialogOpen(true);
+      }
+    } catch (error) {
+      // Profile doesn't exist, user needs to set it up
+      setIsProfileDialogOpen(true);
+    }
   };
 
-  const handleAuthSuccess = (user: User) => {
+  const handleStartMatching = async () => {
+    if (currentUser) {
+      // User is already logged in, check profile status
+      setIsCheckingAuth(true);
+      await checkUserStatusAndRedirect(currentUser);
+      setIsCheckingAuth(false);
+    } else {
+      // User is not logged in, show auth dialog
+      setIsAuthDialogOpen(true);
+    }
+  };
+
+  const handleAuthSuccess = async (user: User) => {
     setCurrentUser(user);
     setIsAuthDialogOpen(false);
-    // Open profile setup dialog after successful auth
-    setIsProfileDialogOpen(true);
+    
+    // Check if user needs to complete profile
+    setIsCheckingAuth(true);
+    await checkUserStatusAndRedirect(user);
+    setIsCheckingAuth(false);
   };
 
   const handleProfileComplete = () => {
@@ -103,9 +154,19 @@ export const HeroSection = () => {
               size="lg" 
               className="tinder-button text-white border-0 text-xl px-12 py-6"
               onClick={handleStartMatching}
+              disabled={isCheckingAuth}
             >
-              <i className="fas fa-heart mr-3"></i>
-              Start Matching
+              {isCheckingAuth ? (
+                <>
+                  <i className="fas fa-spinner fa-spin mr-3"></i>
+                  Checking...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-heart mr-3"></i>
+                  {currentUser ? 'Continue to Chat' : 'Start Matching'}
+                </>
+              )}
             </Button>
             <Button 
               variant="outline" 
