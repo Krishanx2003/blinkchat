@@ -63,9 +63,7 @@ const Header = () => {
             <a href="#features" className="text-gray-700 hover:text-[#FFFC00] transition-colors font-medium">
               Features
             </a>
-            <a href="#about" className="text-gray-700 hover:text-[#FFFC00] transition-colors font-medium">
-              About
-            </a>
+           
             <a href="#download" className="text-gray-700 hover:text-[#FFFC00] transition-colors font-medium">
               Download
             </a>
