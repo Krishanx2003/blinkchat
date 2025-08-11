@@ -12,7 +12,7 @@ import { supabase } from '@/lib/client';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Updated OnlineUser interface to match the main page interface
+// Updated OnlineUser interface to match the SQL function return type
 interface OnlineUser {
   user_id: string;
   name: string;
@@ -21,9 +21,10 @@ interface OnlineUser {
   age: number;
   country: string;
   city: string;
-  is_online: boolean;
-  looking_for_chat: boolean;
   last_seen: string;
+  // Additional properties for UI state
+  is_online?: boolean;
+  looking_for_chat?: boolean;
   updated_at?: string;
 }
 
@@ -42,7 +43,6 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
   const [countryFilter, setCountryFilter] = useState('');
   const [cityFilter, setCityFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showOnlyLookingForChat, setShowOnlyLookingForChat] = useState(false);
   const [selectedUser, setSelectedUser] = useState<OnlineUser | null>(null);
 
   useEffect(() => {
@@ -75,7 +75,7 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
 
   useEffect(() => {
     loadOnlineUsers();
-  }, [genderFilter, countryFilter, cityFilter, showOnlyLookingForChat]);
+  }, [genderFilter, countryFilter, cityFilter]);
 
   useEffect(() => {
     applyFilters();
@@ -100,11 +100,12 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
   const loadOnlineUsers = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.rpc('get_all_online_users_for_chat', {
+      
+      // Use the correct function name from your SQL schema
+      const { data, error } = await supabase.rpc('get_available_users_for_matching', {
         filter_gender: genderFilter || null,
         filter_country: countryFilter || null,
-        filter_city: cityFilter || null,
-        only_looking_for_chat: showOnlyLookingForChat
+        filter_city: cityFilter || null
       });
       
       if (error) {
@@ -119,10 +120,11 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
           age: user.age || 0,
           country: user.country || 'Unknown',
           city: user.city || 'Unknown',
-          is_online: Boolean(user.is_online),
-          looking_for_chat: Boolean(user.looking_for_chat),
           last_seen: user.last_seen || new Date().toISOString(),
-          updated_at: user.updated_at
+          // Since the function only returns users who are online and looking for chat,
+          // we can set these to true
+          is_online: true,
+          looking_for_chat: true
         }));
         setOnlineUsers(typedData);
       }
@@ -154,10 +156,9 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
     setCountryFilter('');
     setCityFilter('');
     setSearchQuery('');
-    setShowOnlyLookingForChat(false);
   };
 
-  const hasActiveFilters = genderFilter || countryFilter || cityFilter || showOnlyLookingForChat;
+  const hasActiveFilters = genderFilter || countryFilter || cityFilter;
 
   const getTimeAgo = (timestamp: string) => {
     const now = new Date();
@@ -247,7 +248,7 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
               className="overflow-hidden border-t border-slate-200/50 dark:border-slate-700/50"
             >
               <div className="p-4 bg-slate-50/50 dark:bg-slate-800/30">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                   <div className="space-y-2">
                     <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">Gender</Label>
                     <div className="relative">
@@ -275,23 +276,23 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
                       className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all"
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">City</Label>
+                    <input
+                      type="text"
+                      placeholder="Any city"
+                      value={cityFilter}
+                      onChange={(e) => setCityFilter(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <label className="flex items-center space-x-3 cursor-pointer group">
-                    <div className="relative">
-                      <input
-                        type="checkbox"
-                        checked={showOnlyLookingForChat}
-                        onChange={(e) => setShowOnlyLookingForChat(e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-gradient-to-r peer-checked:from-violet-500 peer-checked:to-purple-600 after:shadow-sm"></div>
-                    </div>
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
-                      Looking to chat only
-                    </span>
-                  </label>
+                  <div className="text-xs text-slate-600 dark:text-slate-400">
+                    Showing people who are online and looking for chat
+                  </div>
                   
                   {hasActiveFilters && (
                     <Button
@@ -319,7 +320,7 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
                 <Users className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               </div>
               <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                {filteredUsers.length} {filteredUsers.length === 1 ? 'person' : 'people'} online
+                {filteredUsers.length} {filteredUsers.length === 1 ? 'person' : 'people'} available
               </span>
             </div>
             {searchQuery && (
@@ -349,11 +350,11 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
             <div className="w-16 h-16 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 rounded-2xl flex items-center justify-center mb-4">
               <UserIcon className="w-8 h-8 text-slate-400 dark:text-slate-500" />
             </div>
-            <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-2">No one here yet</h3>
+            <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-2">No one available</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs">
               {searchQuery || hasActiveFilters 
                 ? "Try adjusting your search or filters to find more people"
-                : "Be the first to start conversations when others come online"
+                : "No one is currently looking for chat. Check back later!"
               }
             </p>
           </div>
@@ -403,14 +404,12 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
                         </div>
                         
                         {/* Online status indicator */}
-                        {user.is_online && (
-                          <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 ${
-                            selectedUser?.user_id === user.user_id 
-                              ? 'border-white bg-green-400' 
-                              : 'border-white dark:border-slate-800 bg-green-500'
-                          } animate-pulse`}>
-                          </div>
-                        )}
+                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 ${
+                          selectedUser?.user_id === user.user_id 
+                            ? 'border-white bg-green-400' 
+                            : 'border-white dark:border-slate-800 bg-green-500'
+                        } animate-pulse`}>
+                        </div>
                       </div>
                       
                       {/* User Info */}
@@ -450,18 +449,16 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
                           </span>
                         </div>
                         
-                        {/* Status badges */}
+                        {/* Status badge */}
                         <div className="flex items-center gap-2">
-                          {user.looking_for_chat && (
-                            <span className={`inline-flex items-center text-xs font-medium px-2 py-1 rounded-full ${
-                              selectedUser?.user_id === user.user_id 
-                                ? 'bg-white/20 text-white' 
-                                : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
-                            }`}>
-                              <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5 animate-pulse"></span>
-                              Ready to chat
-                            </span>
-                          )}
+                          <span className={`inline-flex items-center text-xs font-medium px-2 py-1 rounded-full ${
+                            selectedUser?.user_id === user.user_id 
+                              ? 'bg-white/20 text-white' 
+                              : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                          }`}>
+                            <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5 animate-pulse"></span>
+                            Ready to chat
+                          </span>
                         </div>
                       </div>
                       

@@ -39,8 +39,10 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
+  const [partnerIsTyping, setPartnerIsTyping] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [chatStatus, setChatStatus] = useState(chatRoom.status);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -49,8 +51,8 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
   useEffect(() => {
     loadMessages();
     
-    // Set up realtime subscription for new messages
-    const channel = supabase
+    // Set up realtime subscriptions
+    const messageChannel = supabase
       .channel(`chat_room_${chatRoom.id}`)
       .on(
         'postgres_changes',
@@ -61,9 +63,6 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
           filter: `chat_room_id=eq.${chatRoom.id}`
         },
         async (payload) => {
-          console.log('New message received:', payload);
-          
-          // Get the sender profile info
           const { data: profileData } = await supabase
             .from('profiles')
             .select('name, username')
@@ -80,28 +79,79 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
           };
 
           setMessages(prev => [...prev, newMsg]);
+          setPartnerIsTyping(false);
         }
-      )
-      .subscribe();
+      );
+
+    // Subscribe to chat room status changes
+    const roomChannel = supabase
+      .channel(`room_status_${chatRoom.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chat_rooms',
+          filter: `id=eq.${chatRoom.id}`
+        },
+        (payload) => {
+          setChatStatus(payload.new.status);
+          if (payload.new.status === 'ended') {
+            toast.info('Chat has been ended');
+            onEndChat();
+          }
+        }
+      );
+
+    // Subscribe to typing indicators
+    const typingChannel = supabase
+      .channel(`typing_${chatRoom.id}`)
+      .on('broadcast', 
+        { event: 'typing' }, 
+        ({ payload }) => {
+          if (payload.user_id !== currentUser.id) {
+            setPartnerIsTyping(payload.isTyping);
+          }
+        }
+      );
+
+    messageChannel.subscribe();
+    roomChannel.subscribe();
+    typingChannel.subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(messageChannel);
+      supabase.removeChannel(roomChannel);
+      supabase.removeChannel(typingChannel);
     };
-  }, [chatRoom.id, currentUser.id]);
+  }, [chatRoom.id, currentUser.id, onEndChat]);
 
-  // Auto scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Handle typing indicator
+  // Broadcast typing status
   useEffect(() => {
-    if (newMessage.length > 0) {
-      setIsTyping(true);
-      const timer = setTimeout(() => setIsTyping(false), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [newMessage]);
+    const timer = setTimeout(() => {
+      if (newMessage.length > 0) {
+        setIsTyping(true);
+        supabase.channel(`typing_${chatRoom.id}`).send({
+          type: 'broadcast',
+          event: 'typing',
+          payload: { user_id: currentUser.id, isTyping: true }
+        });
+      } else {
+        setIsTyping(false);
+        supabase.channel(`typing_${chatRoom.id}`).send({
+          type: 'broadcast',
+          event: 'typing',
+          payload: { user_id: currentUser.id, isTyping: false }
+        });
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [newMessage, chatRoom.id, currentUser.id]);
 
   const loadMessages = async () => {
     try {
@@ -110,22 +160,18 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
         room_id: chatRoom.id
       });
       
-      if (error) {
-        console.error('Error loading messages:', error);
-        toast.error('Failed to load messages');
-      } else {
-        setMessages(data || []);
-      }
+      if (error) throw error;
+      setMessages(data || []);
     } catch (error) {
       console.error('Error loading messages:', error);
-      toast.error('Failed to load messages');
+      toast.error('Failed to load messages. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || chatStatus !== 'active') return;
 
     try {
       const { error } = await supabase
@@ -136,18 +182,34 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
           content: newMessage.trim()
         });
 
-      if (error) {
-        console.error('Error sending message:', error);
-        toast.error('Failed to send message');
-      } else {
-        setNewMessage('');
-        if (textareaRef.current) {
-          textareaRef.current.style.height = 'auto';
-        }
+      if (error) throw error;
+      
+      setNewMessage('');
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      toast.error('Failed to send message');
+      toast.error('Failed to send message. Please try again.');
+    }
+  };
+
+  const endChat = async () => {
+    try {
+      const { error } = await supabase
+        .from('chat_rooms')
+        .update({
+          status: 'ended',
+          ended_at: new Date().toISOString()
+        })
+        .eq('id', chatRoom.id);
+
+      if (error) throw error;
+      onEndChat();
+      toast.success('Chat ended successfully');
+    } catch (error) {
+      console.error('Error ending chat:', error);
+      toast.error('Failed to end chat');
     }
   };
 
@@ -165,8 +227,6 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNewMessage(e.target.value);
-    
-    // Auto-resize textarea
     const textarea = e.target;
     textarea.style.height = 'auto';
     textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
@@ -186,7 +246,6 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
   };
 
   const getCountryFlag = (country: string) => {
-    // Simple country to flag mapping - you can expand this
     const flagMap: { [key: string]: string } = {
       'United States': '🇺🇸',
       'Canada': '🇨🇦',
@@ -202,14 +261,16 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
     return flagMap[country] || '🌍';
   };
 
-  const handleBlockUser = () => {
+  const handleBlockUser = async () => {
     // Implement block user functionality
     toast.info('Block user functionality to be implemented');
+    setShowMenu(false);
   };
 
-  const handleReportUser = () => {
+  const handleReportUser = async () => {
     // Implement report user functionality
     toast.info('Report user functionality to be implemented');
+    setShowMenu(false);
   };
 
   return (
@@ -228,7 +289,9 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
             <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
               {chatPartner.name.charAt(0).toUpperCase()}
             </div>
-            <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 border-2 border-white dark:border-gray-900 rounded-full bg-green-500"></div>
+            {chatStatus === 'active' && (
+              <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 border-2 border-white dark:border-gray-900 rounded-full bg-green-500"></div>
+            )}
           </div>
           
           <div>
@@ -237,7 +300,9 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
               <span className="text-lg">{getCountryFlag(chatPartner.country)}</span>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {isTyping ? (
+              {chatStatus === 'ended' ? (
+                'Chat ended'
+              ) : partnerIsTyping ? (
                 <span className="flex items-center text-indigo-600 dark:text-indigo-400">
                   <span className="flex space-x-1 mr-1">
                     <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
@@ -260,7 +325,6 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
             <MoreVertical className="w-5 h-5 text-gray-600 dark:text-gray-300" />
           </button>
 
-          {/* Dropdown menu */}
           {showMenu && (
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
@@ -269,20 +333,14 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
               className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-20"
             >
               <button
-                onClick={() => {
-                  handleBlockUser();
-                  setShowMenu(false);
-                }}
+                onClick={handleBlockUser}
                 className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center space-x-2"
               >
                 <Shield className="w-4 h-4" />
                 <span>Block User</span>
               </button>
               <button
-                onClick={() => {
-                  handleReportUser();
-                  setShowMenu(false);
-                }}
+                onClick={handleReportUser}
                 className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center space-x-2"
               >
                 <AlertTriangle className="w-4 h-4" />
@@ -290,11 +348,9 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
               </button>
               <div className="border-t border-gray-200 dark:border-gray-700"></div>
               <button
-                onClick={() => {
-                  onEndChat();
-                  setShowMenu(false);
-                }}
-                className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                onClick={endChat}
+                disabled={chatStatus === 'ended'}
+                className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 End Chat
               </button>
@@ -322,7 +378,9 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
         ) : (
           <>
             {messages.map((message, index) => {
-              const isSameSender = index > 0 && messages[index - 1].is_own_message === message.is_own_message;
+              const isSameSender = index > 0 && 
+                messages[index - 1].is_own_message === message.is_own_message &&
+                (new Date(message.created_at).getTime() - new Date(messages[index - 1].created_at).getTime()) < 5 * 60 * 1000;
               const isFirstInGroup = !isSameSender;
               
               return (
@@ -334,6 +392,11 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
                   className={`flex ${message.is_own_message ? 'justify-end' : 'justify-start'}`}
                 >
                   <div className={`max-w-xs sm:max-w-md ${isFirstInGroup ? 'mt-3' : 'mt-1'}`}>
+                    {isFirstInGroup && !message.is_own_message && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        {message.sender_name} (@{message.sender_username})
+                      </div>
+                    )}
                     <div
                       className={`px-4 py-2.5 rounded-2xl ${
                         message.is_own_message
@@ -353,8 +416,7 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
               );
             })}
 
-            {/* Typing indicator */}
-            {isTyping && (
+            {partnerIsTyping && (
               <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -376,80 +438,81 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
       </div>
 
       {/* Message Input */}
-      <div className="p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-t border-gray-200 dark:border-gray-700">
-        <form onSubmit={handleSubmit} className="relative">
-          <div className="flex items-end space-x-2">
-            {/* Emoji button */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="p-2 text-gray-500 hover:text-indigo-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all duration-200"
-              >
-                <Smile className="w-5 h-5" />
-              </button>
-
-              {/* Emoji picker */}
-              {showEmojiPicker && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-3 z-20 w-64"
+      {chatStatus === 'active' ? (
+        <div className="p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-t border-gray-200 dark:border-gray-700">
+          <form onSubmit={handleSubmit} className="relative">
+            <div className="flex items-end space-x-2">
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  className="p-2 text-gray-500 hover:text-indigo-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all duration-200"
                 >
-                  <div className="grid grid-cols-6 gap-2">
-                    {emojis.map((emoji, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        onClick={() => addEmoji(emoji)}
-                        className="text-2xl hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded-lg transition-colors"
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </div>
+                  <Smile className="w-5 h-5" />
+                </button>
 
-            {/* Message input */}
-            <div className="flex-1 relative">
-              <textarea
-                ref={textareaRef}
-                value={newMessage}
-                onChange={handleTextareaChange}
-                onKeyPress={handleKeyPress}
-                placeholder="Type a message..."
-                className="w-full resize-none rounded-full px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-600 transition-all duration-200 outline-none pr-12"
-                rows={1}
-                style={{ minHeight: '44px', maxHeight: '120px' }}
-              />
-              
-              {/* Send button */}
-              <button
-                type="submit"
-                disabled={!newMessage.trim()}
-                className={`absolute right-1.5 bottom-1.5 p-1.5 rounded-full transition-all duration-200 ${
-                  newMessage.trim()
-                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:shadow-lg transform hover:scale-105'
-                    : 'text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                <Send className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        </form>
+                {showEmojiPicker && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-3 z-20 w-64"
+                  >
+                    <div className="grid grid-cols-6 gap-2">
+                      {emojis.map((emoji, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => addEmoji(emoji)}
+                          className="text-2xl hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded-lg transition-colors"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </div>
 
-        {/* Overlay to close emoji picker */}
-        {showEmojiPicker && (
-          <div 
-            className="fixed inset-0 z-10" 
-            onClick={() => setShowEmojiPicker(false)}
-          />
-        )}
-      </div>
+              <div className="flex-1 relative">
+                <textarea
+                  ref={textareaRef}
+                  value={newMessage}
+                  onChange={handleTextareaChange}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type a message..."
+                  className="w-full resize-none rounded-full px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-600 transition-all duration-200 outline-none pr-12"
+                  rows={1}
+                  style={{ minHeight: '44px', maxHeight: '120px' }}
+                />
+                
+                <button
+                  type="submit"
+                  disabled={!newMessage.trim()}
+                  className={`absolute right-1.5 bottom-1.5 p-1.5 rounded-full transition-all duration-200 ${
+                    newMessage.trim()
+                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:shadow-lg transform hover:scale-105'
+                      : 'text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  <Send className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </form>
+
+          {showEmojiPicker && (
+            <div 
+              className="fixed inset-0 z-10" 
+              onClick={() => setShowEmojiPicker(false)}
+            />
+          )}
+        </div>
+      ) : (
+        <div className="p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-t border-gray-200 dark:border-gray-700 text-center">
+          <p className="text-gray-500 dark:text-gray-400">This chat has ended</p>
+        </div>
+      )}
     </div>
   );
 };
