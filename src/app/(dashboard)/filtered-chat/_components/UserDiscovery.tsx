@@ -28,6 +28,17 @@ interface OnlineUser {
   updated_at?: string;
 }
 
+interface ChatRoomWithUnread {
+  id: string;
+  user1_id: string;
+  user2_id: string;
+  status: string;
+  created_at: string;
+  unread_count?: number;
+  last_message?: string;
+  last_message_at?: string;
+}
+
 interface UserDiscoveryProps {
   currentUser: User;
   onUserSelect: (user: OnlineUser) => Promise<void>;
@@ -37,6 +48,8 @@ interface UserDiscoveryProps {
 const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscoveryProps) => {
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<OnlineUser[]>([]);
+  const [chatRooms, setChatRooms] = useState<ChatRoomWithUnread[]>([]);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [genderFilter, setGenderFilter] = useState('');
@@ -47,6 +60,7 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
 
   useEffect(() => {
     loadOnlineUsers();
+    loadChatRooms();
     
     // Set user as online and looking for chat
     updateUserPresence(true, true);
@@ -67,14 +81,50 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
       )
       .subscribe();
 
+    // Set up realtime subscription for new messages
+    const messagesChannel = supabase
+      .channel('private_messages_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'private_messages'
+        },
+        (payload) => {
+          // Update unread counts when new messages arrive
+          loadUnreadCounts();
+        }
+      )
+      .subscribe();
+
+    // Set up realtime subscription for chat rooms
+    const chatRoomsChannel = supabase
+      .channel('chat_rooms_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chat_rooms'
+        },
+        () => {
+          loadChatRooms();
+        }
+      )
+      .subscribe();
+
     return () => {
       updateUserPresence(false, false);
       supabase.removeChannel(presenceChannel);
+      supabase.removeChannel(messagesChannel);
+      supabase.removeChannel(chatRoomsChannel);
     };
   }, []);
 
   useEffect(() => {
     loadOnlineUsers();
+    loadUnreadCounts();
   }, [genderFilter, countryFilter, cityFilter]);
 
   useEffect(() => {
@@ -127,12 +177,66 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
           looking_for_chat: true
         }));
         setOnlineUsers(typedData);
+        
+        // Load unread counts after loading users
+        loadUnreadCounts();
       }
     } catch (error) {
       console.error('Error loading users:', error);
       toast.error('Failed to load online users');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadChatRooms = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .or(`user1_id.eq.${currentUser.id},user2_id.eq.${currentUser.id}`)
+        .eq('status', 'active');
+
+      if (error) {
+        console.error('Error loading chat rooms:', error);
+      } else {
+        setChatRooms(data || []);
+      }
+    } catch (error) {
+      console.error('Error loading chat rooms:', error);
+    }
+  };
+
+  const loadUnreadCounts = async () => {
+    try {
+      const { data: rooms } = await supabase
+        .from('chat_rooms')
+        .select('id, user1_id, user2_id')
+        .or(`user1_id.eq.${currentUser.id},user2_id.eq.${currentUser.id}`)
+        .eq('status', 'active');
+
+      if (!rooms) return;
+
+      const unreadCountsMap: Record<string, number> = {};
+
+      for (const room of rooms) {
+        const otherUserId = room.user1_id === currentUser.id ? room.user2_id : room.user1_id;
+        
+        // Count unread messages (messages not sent by current user)
+        const { count, error } = await supabase
+          .from('private_messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('chat_room_id', room.id)
+          .neq('sender_id', currentUser.id);
+
+        if (!error && count !== null) {
+          unreadCountsMap[otherUserId] = count;
+        }
+      }
+
+      setUnreadCounts(unreadCountsMap);
+    } catch (error) {
+      console.error('Error loading unread counts:', error);
     }
   };
 
@@ -431,7 +535,22 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
                               {user.age}
                             </span>
                           )}
-                        </div>
+                          
+                       
+                        {/* Unread message count */}
+{unreadCounts[user.user_id] > 0 && (
+  <div
+    className={`flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold ${
+      selectedUser?.user_id === user.user_id
+        ? 'bg-white text-violet-600'
+        : 'bg-red-500 text-white'
+    } animate-pulse`}
+  >
+    {unreadCounts[user.user_id] > 99 ? '99+' : unreadCounts[user.user_id]}
+  </div>
+)}
+
+</div>
                         
                         {/* Location */}
                         <div className="flex items-center gap-1 mb-2">
@@ -449,7 +568,7 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
                           </span>
                         </div>
                         
-                        {/* Status badge */}
+                        {/* Status badges */}
                         <div className="flex items-center gap-2">
                           <span className={`inline-flex items-center text-xs font-medium px-2 py-1 rounded-full ${
                             selectedUser?.user_id === user.user_id 
@@ -459,6 +578,18 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView }: UserDiscover
                             <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5 animate-pulse"></span>
                             Ready to chat
                           </span>
+                          
+                          {/* New messages indicator */}
+                          {unreadCounts[user.user_id] && unreadCounts[user.user_id] > 0 && (
+                            <span className={`inline-flex items-center text-xs font-medium px-2 py-1 rounded-full ${
+                              selectedUser?.user_id === user.user_id 
+                                ? 'bg-white/20 text-white' 
+                                : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                            }`}>
+                              <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5 animate-pulse"></span>
+                              New messages
+                            </span>
+                          )}
                         </div>
                       </div>
                       
