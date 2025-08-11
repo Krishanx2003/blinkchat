@@ -54,7 +54,7 @@ export const HeroSection = () => {
         toast.success("Welcome back! Redirecting to chat...");
         setTimeout(() => {
           router.push('/chat');
-        }, 1000);
+        }, 100);
       } else {
         // User needs to complete profile
         setIsProfileDialogOpen(true);

@@ -160,7 +160,7 @@ export const ProfileSetupDialog: React.FC<ProfileSetupDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg bg-gradient-to-br from-purple-600 via-pink-500 to-purple-800 border-none text-white max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg bg-black border-none text-white max-h-[90vh] overflow-y-auto">
         {/* Custom close button */}
         <button
           onClick={() => onOpenChange(false)}

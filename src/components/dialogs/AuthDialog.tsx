@@ -115,7 +115,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-gradient-to-br from-purple-600 via-pink-500 to-purple-800 border-none text-white">
+      <DialogContent className="sm:max-w-md bg-black border-none text-white">
         {/* Custom close button */}
         <button
           onClick={() => onOpenChange(false)}
