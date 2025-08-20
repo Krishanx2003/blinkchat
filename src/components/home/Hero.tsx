@@ -93,7 +93,7 @@ export const HeroSection = () => {
     // Redirect to chat page after profile completion
     setTimeout(() => {
       router.push('/chat');
-    }, 1500);
+    }, 150);
   };
 
   return (

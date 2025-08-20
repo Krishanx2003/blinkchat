@@ -49,16 +49,12 @@ const ChatPage: React.FC = () => {
 
   // Check for mobile view (sync with DashboardLayout's breakpoint)
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobileView(window.innerWidth < 1024); // Match DashboardLayout's lg breakpoint
-      if (window.innerWidth >= 1024) {
-        setShowChatList(true);
-      }
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth < 768); // Adjust breakpoint as needed
     };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   useEffect(() => {
@@ -266,10 +262,6 @@ const ChatPage: React.FC = () => {
                 <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Discover</h2>
                 <p className="text-xs text-slate-600 dark:text-slate-400">Find people to chat with</p>
               </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <Sparkles className="w-4 h-4 text-violet-500" />
-              <span className="text-xs font-medium text-violet-600 dark:text-violet-400">Live</span>
             </div>
           </div>
         </div>
