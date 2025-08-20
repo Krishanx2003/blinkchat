@@ -1,27 +1,43 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+// middleware.ts
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 
-// Allowed admin credentials
-const ADMIN_ID = "353c767a-66b3-4a26-9008-5ef03d8d1595";
-const ADMIN_EMAIL = "trykrishansharmaa@gmail.com";
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next()
+  const supabase = createMiddlewareClient({ req, res })
 
-function isAuthenticated(request: NextRequest) {
-  const token = request.cookies.get('admin-token')?.value;
-  const email = request.cookies.get('admin-email')?.value;
+  // Get user session
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
-  // Grant access only if ID OR Email matches
-  return token === ADMIN_ID || email === ADMIN_EMAIL;
-}
+  if (req.nextUrl.pathname.startsWith('/admin')) {
+    if (!session?.user) {
+      // Not logged in → redirect to login
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = '/auth'
+      return NextResponse.redirect(redirectUrl)
+    }
 
-export function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith('/admin')) {
-    if (!isAuthenticated(request)) {
-      return NextResponse.redirect(new URL('/auth', request.url));
+    // Check if user is admin from profiles table
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('user_id', session.user.id)
+      .single()
+
+    if (error || !profile?.is_admin) {
+      // Not an admin → redirect to homepage
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = '/'
+      return NextResponse.redirect(redirectUrl)
     }
   }
-  return NextResponse.next();
+
+  return res
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
-};
+  matcher: ['/admin/:path*'], // only run middleware on /admin routes
+}
