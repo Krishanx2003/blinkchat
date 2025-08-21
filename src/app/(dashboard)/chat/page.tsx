@@ -397,12 +397,12 @@ const ChatPage = () => {
                           </motion.div>
 
                           {!showAvatar && (
-                            <Badge
-                              variant="ghost"
-                              className={cn("text-xs mt-2 px-2", isOwnMessage ? "self-end" : "self-start")}
-                            >
-                              {formatTime(message.created_at)}
-                            </Badge>
+                           <Badge
+  variant="outline" // or "secondary"
+  className={cn("text-xs mt-2 px-2", isOwnMessage ? "self-end" : "self-start")}
+>
+  {formatTime(message.created_at)}
+</Badge>
                           )}
                         </div>
                       </motion.div>
