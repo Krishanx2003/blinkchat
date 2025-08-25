@@ -12,6 +12,7 @@ import { supabase } from '@/lib/client';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// remove the username , gender 
 // Updated OnlineUser interface to match the SQL function return type
 interface OnlineUser {
   user_id: string;

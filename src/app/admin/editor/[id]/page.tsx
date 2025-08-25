@@ -509,7 +509,7 @@ export default function BlogEditPage() {
 
               {/* Featured Image */}
               <div className="mb-4">
-                <Label htmlFor="featured_image" className="text-white mb-2 block flex items-center">
+                <Label htmlFor="featured_image" className="text-white mb-2 block  items-center">
                   <Image className="w-4 h-4 mr-1" />
                   Featured Image URL
                 </Label>
@@ -554,7 +554,7 @@ export default function BlogEditPage() {
 
               {/* Tags */}
               <div className="mb-4">
-                <Label htmlFor="tags" className="text-white mb-2 block flex items-center">
+                <Label htmlFor="tags" className="text-white mb-2 block  items-center">
                   <Tag className="w-4 h-4 mr-1" />
                   Tags
                 </Label>
@@ -611,7 +611,7 @@ export default function BlogEditPage() {
 
               {/* Schedule */}
               <div>
-                <Label htmlFor="scheduled_at" className="text-white mb-2 block flex items-center">
+                <Label htmlFor="scheduled_at" className="text-white mb-2 block  items-center">
                   <Calendar className="w-4 h-4 mr-1" />
                   Schedule Publication
                 </Label>
