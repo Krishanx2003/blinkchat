@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/client";
-import Header from "@/components/home/Header";
+
 import Download from "@/components/home/Download";
 import Footer from "@/components/home/Footer";
 import { HeroSection } from "@/components/home/Hero";
 import { HowItWorksSection } from "@/components/home/how-it-works";
-import { FeaturesSection } from "@/components/home/Features";
+
+import FeatureSection from "@/components/home/FeatureSection";
+import Header from "@/components/home/Header";
 
 // Flow configuration - change this to switch between dialog and route flows
 const USE_DIALOG_FLOW = true; // Set to false to use route-based flow
@@ -77,7 +79,9 @@ const Page = () => {
       <div className="min-h-screen bg-white">
         <Header />
         <HeroSection />
-        <FeaturesSection />
+
+
+        <FeatureSection />
         <HowItWorksSection />
         <Download />
         <Footer />

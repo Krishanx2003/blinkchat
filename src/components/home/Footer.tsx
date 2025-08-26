@@ -1,6 +1,7 @@
 import React from 'react';
 import { Eye, Heart, Instagram, Twitter, Music } from 'lucide-react';
-
+import Image from 'next/image';
+import chatLogo from "@/assets/chat-logo.png";
 const Footer = () => {
   return (
     <footer id="contact" className="bg-black text-white py-16">
@@ -10,7 +11,13 @@ const Footer = () => {
           <div className="md:col-span-2">
             <div className="flex items-center space-x-2 mb-6">
               <div className="relative">
-                <Eye className="h-8 w-8 text-[#FFFC00]" />
+                <Image 
+                              src="/blinkchat.jpg"
+                              alt="Logo"
+                              width={40}
+                              height={40}
+                              className="w-10 h-10"
+                            />
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#FFFC00] rounded-full animate-pulse"></div>
               </div>
               <span className="text-xl sm:text-2xl font-bold">TingleTalk</span>
