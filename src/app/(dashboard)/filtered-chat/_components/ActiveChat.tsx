@@ -1,356 +1,368 @@
-"use client";
+"use client"
 
-import { useState, useEffect, useRef } from 'react';
-import { User } from '@supabase/supabase-js';
-import { 
-  Send, 
-  ArrowLeft, 
-  MoreVertical, 
-  Smile,
-  Shield,
-  AlertTriangle,
-  MessageCircle
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { ChatRoom, OnlineUser } from '../page';
-import { supabase } from '@/lib/client';
-import { motion } from 'framer-motion';
+import type React from "react"
+
+import { useState, useEffect, useRef } from "react"
+import type { User } from "@supabase/supabase-js"
+import { Send, ArrowLeft, MoreVertical, Smile, Shield, AlertTriangle, MessageCircle, UserIcon } from "lucide-react"
+import { toast } from "sonner"
+import type { ChatRoom, OnlineUser } from "../page"
+import { supabase } from "@/lib/client"
+import { motion } from "framer-motion"
 
 interface Message {
-  id: string;
-  content: string;
-  created_at: string;
-  sender_name: string;
-  sender_username: string;
-  is_own_message: boolean;
+  id: string
+  content: string
+  created_at: string
+  sender_name: string
+  sender_username: string
+  is_own_message: boolean
 }
 
 interface ActiveChatProps {
-  chatRoom: ChatRoom;
-  chatPartner: OnlineUser;
-  currentUser: User;
-  onBack: () => void;
-  onEndChat: () => void;
-  isMobileView: boolean;
+  chatRoom: ChatRoom
+  chatPartner: OnlineUser
+  currentUser: User
+  onBack: () => void
+  onEndChat: () => void
+  isMobileView: boolean
+  onShowProfile?: () => void
 }
 
-const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isMobileView }: ActiveChatProps) => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isTyping, setIsTyping] = useState(false);
-  const [partnerIsTyping, setPartnerIsTyping] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [chatStatus, setChatStatus] = useState(chatRoom.status);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+const ActiveChat = ({
+  chatRoom,
+  chatPartner,
+  currentUser,
+  onBack,
+  onEndChat,
+  isMobileView,
+  onShowProfile,
+}: ActiveChatProps) => {
+  const [messages, setMessages] = useState<Message[]>([])
+  const [newMessage, setNewMessage] = useState("")
+  const [isLoading, setIsLoading] = useState(true)
+  const [partnerIsTyping, setPartnerIsTyping] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [chatStatus, setChatStatus] = useState(chatRoom.status)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const emojis = ['😊', '😂', '😍', '😔', '😎', '🤔', '👍', '👎', '❤️', '🎉', '🔥', '💯'];
+  const emojis = ["😊", "😂", "😍", "😔", "😎", "🤔", "👍", "👎", "❤️", "🎉", "🔥", "💯"]
 
   useEffect(() => {
-    loadMessages();
-    
-    // Set up realtime subscriptions
-    const messageChannel = supabase
-      .channel(`chat_room_${chatRoom.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'private_messages',
-          filter: `chat_room_id=eq.${chatRoom.id}`
-        },
-        async (payload) => {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('name, username')
-            .eq('user_id', payload.new.sender_id)
-            .single();
+    loadMessages()
 
-          const newMsg: Message = {
-            id: payload.new.id,
-            content: payload.new.content,
-            created_at: payload.new.created_at,
-            sender_name: profileData?.name || 'Unknown User',
-            sender_username: profileData?.username || 'unknown',
-            is_own_message: payload.new.sender_id === currentUser.id
-          };
+    const messageChannel = supabase.channel(`chat_room_${chatRoom.id}`).on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "private_messages",
+        filter: `chat_room_id=eq.${chatRoom.id}`,
+      },
+      async (payload) => {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("name, username")
+          .eq("user_id", payload.new.sender_id)
+          .single()
 
-          setMessages(prev => [...prev, newMsg]);
-          setPartnerIsTyping(false);
+        const newMsg: Message = {
+          id: payload.new.id,
+          content: payload.new.content,
+          created_at: payload.new.created_at,
+          sender_name: profileData?.name || "Unknown User",
+          sender_username: profileData?.username || "unknown",
+          is_own_message: payload.new.sender_id === currentUser.id,
         }
-      );
 
-    // Subscribe to chat room status changes
-    const roomChannel = supabase
-      .channel(`room_status_${chatRoom.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'chat_rooms',
-          filter: `id=eq.${chatRoom.id}`
-        },
-        (payload) => {
-          setChatStatus(payload.new.status);
-          if (payload.new.status === 'ended') {
-            toast.info('Chat has been ended');
-            onEndChat();
-          }
+        setMessages((prev) => [...prev, newMsg])
+        setPartnerIsTyping(false)
+      },
+    )
+
+    const roomChannel = supabase.channel(`room_status_${chatRoom.id}`).on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "chat_rooms",
+        filter: `id=eq.${chatRoom.id}`,
+      },
+      (payload) => {
+        setChatStatus(payload.new.status)
+        if (payload.new.status === "ended") {
+          toast.info("Chat has been ended")
+          onEndChat()
         }
-      );
+      },
+    )
 
-    // Subscribe to typing indicators
     const typingChannel = supabase
       .channel(`typing_${chatRoom.id}`)
-      .on('broadcast', 
-        { event: 'typing' }, 
-        ({ payload }) => {
-          if (payload.user_id !== currentUser.id) {
-            setPartnerIsTyping(payload.isTyping);
-          }
+      .on("broadcast", { event: "typing" }, ({ payload }) => {
+        if (payload.user_id !== currentUser.id) {
+          setPartnerIsTyping(payload.isTyping)
         }
-      );
+      })
 
-    messageChannel.subscribe();
-    roomChannel.subscribe();
-    typingChannel.subscribe();
+    messageChannel.subscribe()
+    roomChannel.subscribe()
+    typingChannel.subscribe()
 
     return () => {
-      supabase.removeChannel(messageChannel);
-      supabase.removeChannel(roomChannel);
-      supabase.removeChannel(typingChannel);
-    };
-  }, [chatRoom.id, currentUser.id, onEndChat]);
+      supabase.removeChannel(messageChannel)
+      supabase.removeChannel(roomChannel)
+      supabase.removeChannel(typingChannel)
+    }
+  }, [chatRoom.id, currentUser.id, onEndChat])
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
 
-  // Broadcast typing status
   useEffect(() => {
     const timer = setTimeout(() => {
       if (newMessage.length > 0) {
-        setIsTyping(true);
         supabase.channel(`typing_${chatRoom.id}`).send({
-          type: 'broadcast',
-          event: 'typing',
-          payload: { user_id: currentUser.id, isTyping: true }
-        });
+          type: "broadcast",
+          event: "typing",
+          payload: { user_id: currentUser.id, isTyping: true },
+        })
       } else {
-        setIsTyping(false);
         supabase.channel(`typing_${chatRoom.id}`).send({
-          type: 'broadcast',
-          event: 'typing',
-          payload: { user_id: currentUser.id, isTyping: false }
-        });
+          type: "broadcast",
+          event: "typing",
+          payload: { user_id: currentUser.id, isTyping: false },
+        })
       }
-    }, 500);
+    }, 500)
 
-    return () => clearTimeout(timer);
-  }, [newMessage, chatRoom.id, currentUser.id]);
+    return () => clearTimeout(timer)
+  }, [newMessage, chatRoom.id, currentUser.id])
 
   const loadMessages = async () => {
     try {
-      setIsLoading(true);
-      const { data, error } = await supabase.rpc('get_chat_messages', {
-        room_id: chatRoom.id
-      });
-      
-      if (error) throw error;
-      setMessages(data || []);
+      setIsLoading(true)
+      const { data, error } = await supabase.rpc("get_chat_messages", {
+        room_id: chatRoom.id,
+      })
+
+      if (error) throw error
+      setMessages(data || [])
     } catch (error) {
-      console.error('Error loading messages:', error);
-      toast.error('Failed to load messages. Please try again.');
+      console.error("Error loading messages:", error)
+      toast.error("Failed to load messages. Please try again.")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || chatStatus !== 'active') return;
+    if (!newMessage.trim() || chatStatus !== "active") return
 
     try {
-      const { error } = await supabase
-        .from('private_messages')
-        .insert({
-          chat_room_id: chatRoom.id,
-          sender_id: currentUser.id,
-          content: newMessage.trim()
-        });
+      const { error } = await supabase.from("private_messages").insert({
+        chat_room_id: chatRoom.id,
+        sender_id: currentUser.id,
+        content: newMessage.trim(),
+      })
 
-      if (error) throw error;
-      
-      setNewMessage('');
+      if (error) throw error
+
+      setNewMessage("")
       if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto';
+        textareaRef.current.style.height = "auto"
       }
     } catch (error) {
-      console.error('Error sending message:', error);
-      toast.error('Failed to send message. Please try again.');
+      console.error("Error sending message:", error)
+      toast.error("Failed to send message. Please try again.")
     }
-  };
+  }
 
   const endChat = async () => {
     try {
       const { error } = await supabase
-        .from('chat_rooms')
+        .from("chat_rooms")
         .update({
-          status: 'ended',
-          ended_at: new Date().toISOString()
+          status: "ended",
+          ended_at: new Date().toISOString(),
         })
-        .eq('id', chatRoom.id);
+        .eq("id", chatRoom.id)
 
-      if (error) throw error;
-      onEndChat();
-      toast.success('Chat ended successfully');
+      if (error) throw error
+      onEndChat()
+      toast.success("Chat ended successfully")
     } catch (error) {
-      console.error('Error ending chat:', error);
-      toast.error('Failed to end chat');
+      console.error("Error ending chat:", error)
+      toast.error("Failed to end chat")
     }
-  };
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    sendMessage();
-  };
+    e.preventDefault()
+    sendMessage()
+  }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      sendMessage()
     }
-  };
+  }
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setNewMessage(e.target.value);
-    const textarea = e.target;
-    textarea.style.height = 'auto';
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
-  };
+    setNewMessage(e.target.value)
+    const textarea = e.target
+    textarea.style.height = "auto"
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`
+  }
 
   const addEmoji = (emoji: string) => {
-    setNewMessage(prev => prev + emoji);
-    setShowEmojiPicker(false);
-    textareaRef.current?.focus();
-  };
+    setNewMessage((prev) => prev + emoji)
+    setShowEmojiPicker(false)
+    textareaRef.current?.focus()
+  }
 
   const formatTime = (timestamp: string) => {
     return new Date(timestamp).toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
 
   const getCountryFlag = (country: string) => {
     const flagMap: { [key: string]: string } = {
-      'United States': '🇺🇸',
-      'Canada': '🇨🇦',
-      'United Kingdom': '🇬🇧',
-      'Germany': '🇩🇪',
-      'France': '🇫🇷',
-      'India': '🇮🇳',
-      'China': '🇨🇳',
-      'Japan': '🇯🇵',
-      'Brazil': '🇧🇷',
-      'Australia': '🇦🇺'
-    };
-    return flagMap[country] || '🌍';
-  };
+      "United States": "🇺🇸",
+      Canada: "🇨🇦",
+      "United Kingdom": "🇬🇧",
+      Germany: "🇩🇪",
+      France: "🇫🇷",
+      India: "🇮🇳",
+      China: "🇨🇳",
+      Japan: "🇯🇵",
+      Brazil: "🇧🇷",
+      Australia: "🇦🇺",
+    }
+    return flagMap[country] || "🌍"
+  }
 
   const handleBlockUser = async () => {
-    // Implement block user functionality
-    toast.info('Block user functionality to be implemented');
-    setShowMenu(false);
-  };
+    toast.info("Block user functionality to be implemented")
+    setShowMenu(false)
+  }
 
   const handleReportUser = async () => {
-    // Implement report user functionality
-    toast.info('Report user functionality to be implemented');
-    setShowMenu(false);
-  };
+    toast.info("Report user functionality to be implemented")
+    setShowMenu(false)
+  }
 
   return (
-    <div className="h-full flex flex-col bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
+    <div className="h-full flex flex-col bg-card">
       {/* Chat Header */}
-      <div className="flex items-center justify-between p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center space-x-3">
-          <button 
+      <div className="flex items-center justify-between p-3 sm:p-4 bg-card/95 backdrop-blur-lg border-b border-border">
+        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+          <button
             onClick={onBack}
-            className="md:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+            className="lg:hidden p-1.5 sm:p-2 hover:bg-muted rounded-full transition-colors flex-shrink-0"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
           </button>
-          
-          <div className="relative">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-              {chatPartner.name.charAt(0).toUpperCase()}
+
+          <button
+            onClick={onShowProfile}
+            className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1 hover:bg-muted/50 rounded-lg p-2 -m-2 transition-colors"
+          >
+            <div className="relative flex-shrink-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold text-sm sm:text-base">
+                {chatPartner.name.charAt(0).toUpperCase()}
+              </div>
+              {chatStatus === "active" && (
+                <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 border-2 border-card rounded-full bg-green-500"></div>
+              )}
             </div>
-            {chatStatus === 'active' && (
-              <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 border-2 border-white dark:border-gray-900 rounded-full bg-green-500"></div>
-            )}
-          </div>
-          
-          <div>
-            <div className="flex items-center space-x-2">
-              <h2 className="font-semibold text-gray-900 dark:text-white">{chatPartner.name}</h2>
-              <span className="text-lg">{getCountryFlag(chatPartner.country)}</span>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {chatStatus === 'ended' ? (
-                'Chat ended'
-              ) : partnerIsTyping ? (
-                <span className="flex items-center text-indigo-600 dark:text-indigo-400">
-                  <span className="flex space-x-1 mr-1">
-                    <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                    <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                    <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+
+            <div className="min-w-0 flex-1 text-left">
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                <h2 className="font-semibold text-sm sm:text-base text-card-foreground truncate">{chatPartner.name}</h2>
+                <span className="text-sm sm:text-lg flex-shrink-0">{getCountryFlag(chatPartner.country)}</span>
+              </div>
+              <p className="text-xs text-muted-foreground truncate">
+                {chatStatus === "ended" ? (
+                  "Chat ended"
+                ) : partnerIsTyping ? (
+                  <span className="flex items-center text-primary">
+                    <span className="flex space-x-1 mr-1">
+                      <span
+                        className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-current rounded-full animate-bounce"
+                        style={{ animationDelay: "0ms" }}
+                      ></span>
+                      <span
+                        className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-current rounded-full animate-bounce"
+                        style={{ animationDelay: "150ms" }}
+                      ></span>
+                      <span
+                        className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-current rounded-full animate-bounce"
+                        style={{ animationDelay: "300ms" }}
+                      ></span>
+                    </span>
+                    typing...
                   </span>
-                  typing...
-                </span>
-              ) : 'Online now'}
-            </p>
-          </div>
+                ) : (
+                  "Online now"
+                )}
+              </p>
+            </div>
+          </button>
         </div>
 
         {/* Actions */}
-        <div className="relative">
+        <div className="relative flex-shrink-0 flex items-center space-x-1">
+          {/* Profile button for larger screens */}
+          {!isMobileView && onShowProfile && (
+            <button
+              onClick={onShowProfile}
+              className="p-1.5 sm:p-2 hover:bg-muted rounded-full transition-colors"
+              title="View profile"
+            >
+              <UserIcon className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+            </button>
+          )}
+
           <button
             onClick={() => setShowMenu(!showMenu)}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+            className="p-1.5 sm:p-2 hover:bg-muted rounded-full transition-colors"
           >
-            <MoreVertical className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
           </button>
 
           {showMenu && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
-              className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-20"
+              className="absolute right-0 mt-2 w-44 sm:w-48 bg-popover rounded-lg shadow-xl border border-border overflow-hidden z-20 top-full"
             >
               <button
                 onClick={handleBlockUser}
-                className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center space-x-2"
+                className="w-full px-3 py-2 sm:px-4 sm:py-2.5 text-left text-xs sm:text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground flex items-center space-x-2"
               >
-                <Shield className="w-4 h-4" />
+                <Shield className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>Block User</span>
               </button>
               <button
                 onClick={handleReportUser}
-                className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center space-x-2"
+                className="w-full px-3 py-2 sm:px-4 sm:py-2.5 text-left text-xs sm:text-sm text-destructive hover:bg-accent hover:text-accent-foreground flex items-center space-x-2"
               >
-                <AlertTriangle className="w-4 h-4" />
+                <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>Report User</span>
               </button>
-              <div className="border-t border-gray-200 dark:border-gray-700"></div>
+              <div className="border-t border-border"></div>
               <button
                 onClick={endChat}
-                disabled={chatStatus === 'ended'}
-                className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={chatStatus === "ended"}
+                className="w-full px-3 py-2 sm:px-4 sm:py-2.5 text-left text-xs sm:text-sm text-destructive hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 End Chat
               </button>
@@ -360,111 +372,126 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-2 sm:space-y-3">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-gray-500 dark:text-gray-400">Loading messages...</div>
+            <div className="text-muted-foreground text-sm">Loading messages...</div>
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center p-6">
-            <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-4">
-              <MessageCircle className="w-8 h-8 text-indigo-500 dark:text-indigo-400" />
+          <div className="flex flex-col items-center justify-center h-full text-center p-4 sm:p-6">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-muted rounded-full flex items-center justify-center mb-3 sm:mb-4">
+              <MessageCircle className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">No messages yet</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
+            <h3 className="text-base sm:text-lg font-medium text-card-foreground mb-1">No messages yet</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-xs">
               Say hello to {chatPartner.name} and start the conversation!
             </p>
           </div>
         ) : (
           <>
             {messages.map((message, index) => {
-              const isSameSender = index > 0 && 
+              const isSameSender =
+                index > 0 &&
                 messages[index - 1].is_own_message === message.is_own_message &&
-                (new Date(message.created_at).getTime() - new Date(messages[index - 1].created_at).getTime()) < 5 * 60 * 1000;
-              const isFirstInGroup = !isSameSender;
-              
+                new Date(message.created_at).getTime() - new Date(messages[index - 1].created_at).getTime() <
+                  5 * 60 * 1000
+              const isFirstInGroup = !isSameSender
+
               return (
                 <motion.div
                   key={message.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2 }}
-                  className={`flex ${message.is_own_message ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${message.is_own_message ? "justify-end" : "justify-start"}`}
                 >
-                  <div className={`max-w-xs sm:max-w-md ${isFirstInGroup ? 'mt-3' : 'mt-1'}`}>
+                  <div
+                    className={`max-w-[85%] sm:max-w-xs md:max-w-md ${isFirstInGroup ? "mt-2 sm:mt-3" : "mt-0.5 sm:mt-1"}`}
+                  >
                     {isFirstInGroup && !message.is_own_message && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      <div className="text-xs text-muted-foreground mb-1 px-1">
                         {message.sender_name} (@{message.sender_username})
                       </div>
                     )}
                     <div
-                      className={`px-4 py-2.5 rounded-2xl ${
+                      className={`px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl ${
                         message.is_own_message
-                          ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-br-sm'
-                          : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-bl-sm'
+                          ? "bg-primary text-primary-foreground rounded-br-sm"
+                          : "bg-muted text-card-foreground border border-border rounded-bl-sm"
                       } transition-all duration-200 hover:shadow-md`}
                     >
-                      <p className="text-sm leading-relaxed break-words">{message.content}</p>
+                      <p className="text-xs sm:text-sm leading-relaxed break-words">{message.content}</p>
                     </div>
-                    <div className={`text-xs mt-1 px-1 ${
-                      message.is_own_message ? 'text-right text-gray-500 dark:text-gray-400' : 'text-gray-400 dark:text-gray-500'
-                    }`}>
+                    <div
+                      className={`text-xs mt-1 px-1 ${
+                        message.is_own_message ? "text-right text-muted-foreground" : "text-muted-foreground"
+                      }`}
+                    >
                       {formatTime(message.created_at)}
                     </div>
                   </div>
                 </motion.div>
-              );
+              )
             })}
 
             {partnerIsTyping && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="flex justify-start"
               >
-                <div className="bg-white dark:bg-gray-800 rounded-2xl rounded-bl-sm px-4 py-3 max-w-xs border border-gray-200 dark:border-gray-700">
+                <div className="bg-muted rounded-2xl rounded-bl-sm px-3 py-2 sm:px-4 sm:py-3 max-w-[85%] sm:max-w-xs border border-border">
                   <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <div
+                      className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-muted-foreground rounded-full animate-bounce"
+                      style={{ animationDelay: "0ms" }}
+                    />
+                    <div
+                      className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-muted-foreground rounded-full animate-bounce"
+                      style={{ animationDelay: "150ms" }}
+                    />
+                    <div
+                      className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-muted-foreground rounded-full animate-bounce"
+                      style={{ animationDelay: "300ms" }}
+                    />
                   </div>
                 </div>
               </motion.div>
             )}
-            
+
             <div ref={messagesEndRef} />
           </>
         )}
       </div>
 
       {/* Message Input */}
-      {chatStatus === 'active' ? (
-        <div className="p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-t border-gray-200 dark:border-gray-700">
+      {chatStatus === "active" ? (
+        <div className="p-2 sm:p-4 bg-card/95 backdrop-blur-lg border-t border-border">
           <form onSubmit={handleSubmit} className="relative">
-            <div className="flex items-end space-x-2">
+            <div className="flex items-end space-x-1 sm:space-x-2">
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  className="p-2 text-gray-500 hover:text-indigo-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all duration-200"
+                  className="p-1.5 sm:p-2 text-muted-foreground hover:text-primary hover:bg-muted rounded-full transition-all duration-200"
                 >
-                  <Smile className="w-5 h-5" />
+                  <Smile className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
 
                 {showEmojiPicker && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
-                    className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-3 z-20 w-64"
+                    className="absolute bottom-full mb-2 left-0 bg-popover border border-border rounded-xl shadow-xl p-2 sm:p-3 z-20 w-56 sm:w-64"
                   >
-                    <div className="grid grid-cols-6 gap-2">
+                    <div className="grid grid-cols-6 gap-1 sm:gap-2">
                       {emojis.map((emoji, index) => (
                         <button
                           key={index}
                           type="button"
                           onClick={() => addEmoji(emoji)}
-                          className="text-2xl hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded-lg transition-colors"
+                          className="text-lg sm:text-2xl hover:bg-accent p-1 rounded-lg transition-colors"
                         >
                           {emoji}
                         </button>
@@ -481,40 +508,35 @@ const ActiveChat = ({ chatRoom, chatPartner, currentUser, onBack, onEndChat, isM
                   onChange={handleTextareaChange}
                   onKeyPress={handleKeyPress}
                   placeholder="Type a message..."
-                  className="w-full resize-none rounded-full px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-600 transition-all duration-200 outline-none pr-12"
+                  className="w-full resize-none rounded-lg px-3 py-2 sm:px-4 sm:py-2.5 bg-input text-foreground border border-border focus:ring-2 focus:ring-ring focus:border-ring transition-all duration-200 outline-none pr-10 sm:pr-12 text-sm sm:text-base placeholder:text-muted-foreground"
                   rows={1}
-                  style={{ minHeight: '44px', maxHeight: '120px' }}
+                  style={{ minHeight: "36px", maxHeight: "120px" }}
                 />
-                
+
                 <button
                   type="submit"
                   disabled={!newMessage.trim()}
-                  className={`absolute right-1.5 bottom-1.5 p-1.5 rounded-full transition-all duration-200 ${
+                  className={`absolute right-1 bottom-1 sm:right-1.5 sm:bottom-1.5 p-1 sm:p-1.5 rounded-full transition-all duration-200 ${
                     newMessage.trim()
-                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:shadow-lg transform hover:scale-105'
-                      : 'text-gray-400 cursor-not-allowed'
+                      ? "bg-primary text-primary-foreground hover:shadow-lg transform hover:scale-105"
+                      : "text-muted-foreground cursor-not-allowed"
                   }`}
                 >
-                  <Send className="w-5 h-5" />
+                  <Send className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </div>
             </div>
           </form>
 
-          {showEmojiPicker && (
-            <div 
-              className="fixed inset-0 z-10" 
-              onClick={() => setShowEmojiPicker(false)}
-            />
-          )}
+          {showEmojiPicker && <div className="fixed inset-0 z-10" onClick={() => setShowEmojiPicker(false)} />}
         </div>
       ) : (
-        <div className="p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-t border-gray-200 dark:border-gray-700 text-center">
-          <p className="text-gray-500 dark:text-gray-400">This chat has ended</p>
+        <div className="p-3 sm:p-4 bg-card/95 backdrop-blur-lg border-t border-border text-center">
+          <p className="text-muted-foreground text-sm">This chat has ended</p>
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default ActiveChat;
+export default ActiveChat

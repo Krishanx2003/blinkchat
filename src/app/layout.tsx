@@ -102,7 +102,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-gray-900`}
       >
         {/* ✅ Floating Copy Link Button */}
-        <ShareButton />
+        {/* <ShareButton /> */}
 
         {/* ✅ Main Content */}
         {children}
