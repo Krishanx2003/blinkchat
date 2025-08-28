@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import type { User } from "@supabase/supabase-js"
 import { useRouter } from "next/navigation"
-import { MessageCircle, Users } from "lucide-react"
+import { MessageCircle, Users, ArrowLeft } from "lucide-react"
 import { toast } from "sonner"
 
 import ActiveChat from "./_components/ActiveChat"
@@ -269,88 +269,115 @@ const ChatPage: React.FC = () => {
       <div
         className={cn(
           "flex-shrink-0 border-r border-sidebar-border bg-sidebar shadow-sm transition-all duration-300",
-          // Mobile: full width when showing list, hidden when chatting
-          isMobileView ? (showChatList ? "w-full" : "hidden") : "w-80 lg:w-96",
-          "h-full overflow-hidden flex flex-col",
+          // Mobile: full width when showing list, completely hidden when chatting
+          isMobileView 
+            ? (showChatList ? "w-full" : "w-0 overflow-hidden opacity-0") 
+            : "w-80 lg:w-96",
+          "h-full flex flex-col",
         )}
       >
-        {/* Header */}
-        <div className="flex-shrink-0 p-4 border-b border-sidebar-border bg-sidebar">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-sidebar-primary rounded-xl">
-              <Users className="w-5 h-5 text-sidebar-primary-foreground" />
+        {/* Only render content when visible */}
+        {(!isMobileView || showChatList) && (
+          <>
+            {/* Header */}
+            <div className="flex-shrink-0 p-4 border-b border-sidebar-border bg-sidebar">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-sidebar-primary rounded-xl">
+                  <Users className="w-5 h-5 text-sidebar-primary-foreground" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-sidebar-foreground">Discover</h2>
+                  <p className="text-xs text-sidebar-foreground/60">Find people to chat with</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-sidebar-foreground">Discover</h2>
-              <p className="text-xs text-sidebar-foreground/60">Find people to chat with</p>
-            </div>
-          </div>
-        </div>
 
-        {/* User Discovery Content */}
-        <div className="flex-1 overflow-hidden">
-          <UserDiscovery
-            currentUser={user}
-            onUserSelect={handleUserSelect}
-            isMobileView={isMobileView}
-            selectedUserId={chatPartner?.user_id}
-          />
-        </div>
+            {/* User Discovery Content */}
+            <div className="flex-1 overflow-hidden">
+              <UserDiscovery
+                currentUser={user}
+                onUserSelect={handleUserSelect}
+                isMobileView={isMobileView}
+                selectedUserId={chatPartner?.user_id}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Main Chat Area */}
       <div
-        className={cn("flex-1 flex h-full bg-card min-w-0", isMobileView && !showChatList ? "flex" : "hidden lg:flex")}
+        className={cn(
+          "flex h-full bg-card min-w-0",
+          // Mobile: take full width when chat is active, hidden when showing discovery
+          isMobileView 
+            ? (showChatList ? "w-0 overflow-hidden opacity-0" : "w-full flex-1") 
+            : "flex-1 flex"
+        )}
       >
-        {/* Chat Interface */}
-        <div
-          className={cn(
-            "flex-1 flex flex-col h-full min-w-0",
-            showUserProfile && !isMobileView ? "xl:flex-1" : "flex-1",
-          )}
-        >
-          {activeChat && chatPartner ? (
-            <ActiveChat
-              chatRoom={activeChat}
-              chatPartner={chatPartner}
-              currentUser={user}
-              onBack={handleBackToDiscovery}
-              onEndChat={handleEndChat}
-              isMobileView={isMobileView}
-            />
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 bg-background">
-              <div className="max-w-md text-center">
-                <div className="w-24 h-24 bg-muted rounded-3xl flex items-center justify-center mx-auto mb-6">
-                  <MessageCircle className="w-12 h-12 text-muted-foreground" />
+        {/* Only render chat content when visible */}
+        {(!isMobileView || !showChatList) && (
+          <>
+            {/* Chat Interface */}
+            <div
+              className={cn(
+                "flex-1 flex flex-col h-full min-w-0",
+                showUserProfile && !isMobileView ? "xl:flex-1" : "flex-1",
+              )}
+            >
+              {activeChat && chatPartner ? (
+                <>
+                  {/* Mobile Back Button */}
+                  {isMobileView && (
+                    <div className="flex-shrink-0 p-3 border-b border-border bg-card">
+                      <button
+                        onClick={handleBackToDiscovery}
+                        className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        Back to Discovery
+                      </button>
+                    </div>
+                  )}
+                  <ActiveChat
+                    chatRoom={activeChat}
+                    chatPartner={chatPartner}
+                    currentUser={user}
+                    onBack={handleBackToDiscovery}
+                    onEndChat={handleEndChat}
+                    isMobileView={isMobileView}
+                  />
+                </>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 bg-background">
+                  <div className="max-w-md text-center">
+                    <div className="w-24 h-24 bg-muted rounded-3xl flex items-center justify-center mx-auto mb-6">
+                      <MessageCircle className="w-12 h-12 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-foreground mb-3">Ready to Connect?</h3>
+                    <p className="text-muted-foreground mb-6 leading-relaxed">
+                      Choose someone from the discovery panel to start a meaningful conversation.
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-2xl font-bold text-foreground mb-3">Ready to Connect?</h3>
-                <p className="text-muted-foreground mb-6 leading-relaxed">
-                  Choose someone from the discovery panel to start a meaningful conversation. Your next great chat is
-                  just a click away!
-                </p>
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                  <span>People are online and ready to chat</span>
-                </div>
-              </div>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* User Profile Panel - Discord-like right sidebar */}
-        {showUserProfile && chatPartner && !isMobileView && (
-          <UserProfile
-            user={chatPartner}
-            onClose={() => setShowUserProfile(false)}
-            onBlock={() => {
-              toast.info("Block user functionality to be implemented")
-            }}
-            onReport={() => {
-              toast.info("Report user functionality to be implemented")
-            }}
-            className="w-80 xl:w-96 flex-shrink-0"
-          />
+            {/* User Profile Panel - Discord-like right sidebar */}
+            {showUserProfile && chatPartner && !isMobileView && (
+              <UserProfile
+                user={chatPartner}
+                onClose={() => setShowUserProfile(false)}
+                onBlock={() => {
+                  toast.info("Block user functionality to be implemented")
+                }}
+                onReport={() => {
+                  toast.info("Report user functionality to be implemented")
+                }}
+                className="w-80 xl:w-96 flex-shrink-0"
+              />
+            )}
+          </>
         )}
       </div>
 

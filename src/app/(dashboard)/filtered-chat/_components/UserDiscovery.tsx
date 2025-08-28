@@ -175,6 +175,7 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView, selectedUserId
       console.error("Error loading unread counts:", error)
     }
   }
+  
 
   const applyFilters = () => {
     let filtered = [...onlineUsers]
@@ -211,6 +212,24 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView, selectedUserId
     const index = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length
     return colors[index]
   }
+
+  function formatLastSeen(lastSeen: string | Date) {
+  const date = new Date(lastSeen)
+  const now = new Date()
+
+  const isToday = date.toDateString() === now.toDateString()
+  const yesterday = new Date()
+  yesterday.setDate(now.getDate() - 1)
+
+  if (isToday) {
+    return `today at ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+  } else if (date.toDateString() === yesterday.toDateString()) {
+    return `yesterday at ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+  } else {
+    return `${date.toLocaleDateString()} at ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+  }
+}
+
 
   return (
     <div className="h-full flex flex-col bg-sidebar">
@@ -474,7 +493,7 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView, selectedUserId
                         </div>
 
                         {/* Status badges */}
-                        <div className="flex items-center gap-2">
+                        {/* <div className="flex items-center gap-2">
                           <span
                             className={`inline-flex items-center text-xs font-medium px-2 py-1 rounded-full ${
                               selectedUserId === user.user_id
@@ -486,36 +505,11 @@ const UserDiscovery = ({ currentUser, onUserSelect, isMobileView, selectedUserId
                             Ready to chat
                           </span>
 
-                          {/* New messages indicator */}
-                          {unreadCounts[user.user_id] && unreadCounts[user.user_id] > 0 && (
-                            <span
-                              className={`inline-flex items-center text-xs font-medium px-2 py-1 rounded-full ${
-                                selectedUserId === user.user_id
-                                  ? "bg-white/20 text-sidebar-primary-foreground"
-                                  : "bg-blue-500/20 text-blue-400"
-                              }`}
-                            >
-                              <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5 animate-pulse"></span>
-                              New messages
-                            </span>
-                          )}
-                        </div>
+                       
+                        </div> */}
                       </div>
 
-                      {/* Last seen */}
-                      <div className="flex-shrink-0 text-right">
-                        <div className="flex items-center gap-1 mb-1">
-                          <span
-                            className={`text-xs ${
-                              selectedUserId === user.user_id
-                                ? "text-sidebar-primary-foreground/80"
-                                : "text-sidebar-foreground/50"
-                            }`}
-                          >
-                            Last seen: {new Date(user.last_seen).toLocaleTimeString()}
-                          </span>
-                        </div>
-                      </div>
+                     
                     </div>
                   </button>
                 </motion.div>

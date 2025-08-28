@@ -14,6 +14,23 @@ interface UserProfileProps {
   className?: string
 }
 
+function formatLastSeen(lastSeen: string | Date) {
+  const date = new Date(lastSeen)
+  const now = new Date()
+
+  const isToday = date.toDateString() === now.toDateString()
+  const yesterday = new Date()
+  yesterday.setDate(now.getDate() - 1)
+
+  if (isToday) {
+    return `today at ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+  } else if (date.toDateString() === yesterday.toDateString()) {
+    return `yesterday at ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+  } else {
+    return `${date.toLocaleDateString()} at ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+  }
+}
+
 const UserProfile: React.FC<UserProfileProps> = ({ user, onClose, onBlock, onReport, className = "" }) => {
   const getCountryFlag = (country: string) => {
     const flagMap: { [key: string]: string } = {
@@ -62,7 +79,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onClose, onBlock, onRep
         <div className="text-center">
           <div className="relative mx-auto mb-4">
             <div
-              className={`w-20 h-20 rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-lg bg-gradient-to-br ${getAvatarColor(user.name)}`}
+              className={`w-20 h-20 rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-lg bg-gradient-to-br ${getAvatarColor(
+                user.name
+              )}`}
             >
               {user.name.charAt(0).toUpperCase()}
             </div>
@@ -72,12 +91,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onClose, onBlock, onRep
           <h2 className="text-xl font-bold text-card-foreground mb-1">{user.name}</h2>
           <p className="text-sm text-muted-foreground">@{user.username}</p>
 
-          <div className="flex items-center justify-center gap-2 mt-3">
-            <Badge variant="secondary" className="bg-green-500/20 text-green-400">
-              <span className="w-2 h-2 rounded-full bg-current mr-1.5 animate-pulse"></span>
-              Online
-            </Badge>
-          </div>
+          {/* Last seen */}
+          <p className="text-xs text-muted-foreground mt-2">
+            last seen {formatLastSeen(user.last_seen)}
+          </p>
         </div>
 
         {/* Details */}
