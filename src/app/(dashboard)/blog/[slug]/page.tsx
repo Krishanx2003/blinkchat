@@ -1,4 +1,3 @@
-
 import Link from 'next/link';
 import Image from 'next/image';
 import { format } from 'date-fns';
@@ -84,11 +83,11 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-purple-800">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <Link
           href="/blog"
-          className="inline-flex items-center text-white/80 hover:text-white mb-8 transition-colors"
+          className="inline-flex items-center text-muted-foreground hover:text-foreground mb-8 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Blog
@@ -105,14 +104,14 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
                 className="w-full h-64 md:h-96 object-cover rounded-2xl mb-6"
               />
             )}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <div className="bg-secondary backdrop-blur-lg rounded-2xl p-8 border border-border">
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
                 {post.title}
               </h1>
               {post.excerpt && (
-                <p className="text-xl text-white/80 mb-6">{post.excerpt}</p>
+                <p className="text-xl text-muted-foreground mb-6">{post.excerpt}</p>
               )}
-              <div className="flex flex-wrap items-center gap-4 mb-6 text-white/60">
+              <div className="flex flex-wrap items-center gap-4 mb-6 text-muted-foreground">
                 <div className="flex items-center">
                   <Calendar className="w-4 h-4 mr-1" />
                   {format(new Date(post.published_at), 'MMMM dd, yyyy')}
@@ -122,17 +121,17 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
                   {post.view_count} views
                 </div>
                 {post.category && (
-                  <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
+                  <span className="bg-muted px-3 py-1 rounded-full text-sm text-foreground">
                     {post.category}
                   </span>
                 )}
               </div>
               {post.tags && post.tags.length > 0 && (
                 <div className="flex items-center gap-2 mb-6">
-                  <Tag className="w-4 h-4 text-white/40" />
+                  <Tag className="w-4 h-4 text-muted-foreground" />
                   <div className="flex gap-2 flex-wrap">
                     {post.tags.map((tag: string) => (
-                      <span key={tag} className="text-sm text-white/70 bg-white/20 px-2 py-1 rounded">
+                      <span key={tag} className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded">
                         #{tag}
                       </span>
                     ))}
@@ -140,7 +139,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
                 </div>
               )}
               <div className="flex items-center gap-2">
-                <Share2 className="w-4 h-4 text-white/60 mr-2" />
+                <Share2 className="w-4 h-4 text-muted-foreground mr-2" />
                 <button className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors" disabled>
                   Twitter
                 </button>
@@ -150,37 +149,37 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
                 <button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors" disabled>
                   LinkedIn
                 </button>
-                <button className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded text-sm transition-colors" disabled>
+                <button className="bg-secondary hover:bg-muted text-foreground px-3 py-1 rounded text-sm transition-colors" disabled>
                   Copy Link
                 </button>
               </div>
             </div>
           </header>
 
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 mb-8">
+          <div className="bg-secondary backdrop-blur-lg rounded-2xl p-8 border border-border mb-8">
             <div
-              className="prose prose-lg prose-invert max-w-none text-white/90"
+              className="prose prose-lg prose-invert max-w-none text-foreground"
               dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, '<br />') }}
             />
           </div>
 
           {relatedPosts.length > 0 && (
-            <section className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
-              <h2 className="text-2xl font-bold text-white mb-6">Related Posts</h2>
+            <section className="bg-secondary backdrop-blur-lg rounded-2xl p-8 border border-border">
+              <h2 className="text-2xl font-bold text-foreground mb-6">Related Posts</h2>
               <div className="grid md:grid-cols-3 gap-6">
                 {relatedPosts.map((relatedPost: RelatedPost) => (
                   <Link
                     key={relatedPost.id}
                     href={`/blog/${relatedPost.slug}`}
-                    className="group block bg-white/10 rounded-xl p-4 hover:bg-white/20 transition-all"
+                    className="group block bg-muted rounded-xl p-4 hover:bg-secondary transition-all border border-border"
                   >
-                    <h3 className="text-lg font-semibold text-white group-hover:text-yellow-300 mb-2 line-clamp-2">
+                    <h3 className="text-lg font-semibold text-foreground group-hover:text-primary mb-2 line-clamp-2">
                       {relatedPost.title}
                     </h3>
-                    <p className="text-white/70 text-sm mb-3 line-clamp-3">
+                    <p className="text-muted-foreground text-sm mb-3 line-clamp-3">
                       {relatedPost.excerpt}
                     </p>
-                    <div className="text-xs text-white/60">
+                    <div className="text-xs text-muted-foreground">
                       {format(new Date(relatedPost.published_at), 'MMM dd, yyyy')}
                     </div>
                   </Link>
@@ -189,6 +188,16 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
             </section>
           )}
         </article>
+
+        {/* Back to App */}
+        <div className="text-center mt-12">
+          <Link
+            href="/chat"
+            className="inline-flex items-center px-6 py-3 bg-secondary hover:bg-muted text-foreground rounded-xl transition-colors"
+          >
+            ← Back to TingleTalk 
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -1,73 +1,93 @@
+// app/page.tsx
 "use client";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/client";
 
-import { useState, useEffect } from 'react';
-import HomeScreen from '@/components/HomeScreen';
+import Download from "@/components/home/Download";
+import Footer from "@/components/home/Footer";
+import { HeroSection } from "@/components/home/Hero";
+import { HowItWorksSection } from "@/components/home/how-it-works";
 
-import WaitingScreen from '@/components/WaitingScreen';
-import EndScreen from '@/components/EndScreen';
-import ChatScreen from '@/components/ChatScreen';
+import FeatureSection from "@/components/home/FeatureSection";
+import Header from "@/components/home/Header";
 
+// Flow configuration - change this to switch between dialog and route flows
+const USE_DIALOG_FLOW = true; // Set to false to use route-based flow
 
-type AppState = 'home' | 'waiting' | 'chat' | 'ended';
+const Page = () => {
+  const router = useRouter();
+  const [authOpen, setAuthOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-const HomePage: React.FC = () => {
-  const [currentState, setCurrentState] = useState<AppState>('home');
-  const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 minutes in seconds
+  // Track if user is authenticated and profile complete
+  const [isAuthed, setIsAuthed] = useState(false);
 
-  const handleStartChat = () => {
-    setCurrentState('waiting');
-    // Simulate finding a match after 2-3 seconds
-    setTimeout(() => {
-      setCurrentState('chat');
-      setTimeLeft(15 * 60); // Reset timer when chat starts
-    }, 2500);
-  };
-
-  const handleEndChat = () => {
-    setCurrentState('ended');
-  };
-
-  const handleNewChat = () => {
-    setCurrentState('home');
-    setTimeLeft(15 * 60);
-  };
-
-  // Timer countdown effect
   useEffect(() => {
-    if (currentState === 'chat' && timeLeft > 0) {
-      const timer = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            setCurrentState('ended');
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      return () => clearInterval(timer);
+    // Only check auth status if using route-based flow
+    if (!USE_DIALOG_FLOW) {
+      const checkAuthAndProfile = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setIsAuthed(false);
+          setAuthOpen(true);
+          setLoading(false);
+          return;
+        }
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("profile_completed")
+          .eq("user_id", user.id)
+          .single();
+        if (!profile || !profile.profile_completed) {
+          setIsAuthed(false);
+          setAuthOpen(true);
+          setLoading(false);
+          return;
+        }
+        setIsAuthed(true);
+        setAuthOpen(false);
+        setLoading(false);
+      };
+      
+      checkAuthAndProfile();
+      
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+        checkAuthAndProfile();
+      });
+      
+      return () => subscription.unsubscribe();
+    } else {
+      // For dialog flow, no auth checking needed on page load
+      setLoading(false);
     }
-  }, [currentState, timeLeft]);
+  }, []);
 
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  // For route-based flow loading state
+  if (!USE_DIALOG_FLOW && loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-white text-center">
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-purple-800">
-      {currentState === 'home' && <HomeScreen onStartChat={handleStartChat} />}
-      {currentState === 'waiting' && <WaitingScreen />}
-      {currentState === 'chat' && (
-        <ChatScreen 
-          timeLeft={formatTime(timeLeft)} 
-          onEndChat={handleEndChat}
-        />
-      )}
-      {currentState === 'ended' && <EndScreen onNewChat={handleNewChat} />}
-    </div>
+    <>
+      <div className="min-h-screen bg-white">
+        <Header />
+        <HeroSection />
+
+
+        <FeatureSection />
+        <HowItWorksSection />
+        <Download />
+        <Footer />
+      </div>
+    </>
   );
 };
 
-export default HomePage;
+export default Page;
